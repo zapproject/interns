@@ -24,7 +24,6 @@ contract AuxiliaryMarket is Helper{
         return uint(keccak256(abi.encodePacked(block.difficulty, now, assetPrices)));
     }
 
-
     //Mapping of holders
     mapping (address => AuxMarketHolder) holders;
 
