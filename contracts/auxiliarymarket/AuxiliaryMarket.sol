@@ -44,10 +44,10 @@ contract AuxiliaryMarket is Helper{
         registry = RegistryInterface(registryAddress);
 
         // initialize in registry
-        bytes32 title = "Main market";
+        bytes32 title = "Auxiliary Market";
 
         registry.initiateProvider(12345, title);
-        registry.initiateProviderCurve(endPoint, curve1, address(0));
+        registry.initiateProviderCurve(endPoint, curve, address(0));
     }
 
     //Mapping of holders
