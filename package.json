@@ -1,7 +1,7 @@
 {
   "name": "zap_contracts",
   "version": "0.0.1",
-  "description": "Orcales market contracts",
+  "description": "Oracles market contracts",
   "main": "truffle migrate",
   "directories": {
     "test": "test"
