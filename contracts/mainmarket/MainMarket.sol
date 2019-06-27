@@ -4,8 +4,9 @@ import "../platform/registry/RegistryInterface.sol";
 import "../platform/registry/Registry.sol";
 import "../platform/bondage/BondageInterface.sol";
 import "../platform/bondage/Bondage.sol";
+import "../lib/ownership/ZapCoordinatorInterface.sol";
 
-contract MainMarket is Upgradable{
+contract MainMarket {
 
     struct MainMarketHolder{
         uint256 tokensOwned;
@@ -13,6 +14,7 @@ contract MainMarket is Upgradable{
 
     RegistryInterface public registry;
     BondageInterface public bondage;
+    ZapCoordinatorInterface public coordinator;
 
     bytes32 public endPoint = "Bond To Main Maket";
     int256[] curve1 = [1,1,1000];
@@ -22,7 +24,8 @@ contract MainMarket is Upgradable{
 
 
 
-    constructor() public {
+    constructor(address _zapCoor) public {
+        coordinator = ZapCoordinatorInterface(_zapCoor);
         address bondageAddr = coordinator.getContract("BONDAGE");
         bondage = BondageInterface(bondageAddr);
 
@@ -34,10 +37,13 @@ contract MainMarket is Upgradable{
 
         registry.initiateProvider(12345, title);
         registry.initiateProviderCurve(endPoint, curve1, address(0));
+
     }
 
     function bond (uint amount) external returns(uint256) {
-        return bondage.delegateBond(msg.sender, address(this), endPoint, amount);
+        uint marketTokensGenerated = bondage.delegateBond(msg.sender, address(this), endPoint, amount);
+
+        // return bondage.delegateBond(msg.sender, address(this), endPoint, amount);
     }
     
 
