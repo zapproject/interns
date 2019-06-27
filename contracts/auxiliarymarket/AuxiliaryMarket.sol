@@ -4,6 +4,11 @@ import "../mainmarket/MainMarket.sol";
 import "./AuxiliaryMarketInterface.sol";
 import "./Helper.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
+import "../platform/registry/RegistryInterface.sol";
+import "../platform/registry/Registry.sol";
+import "../platform/bondage/BondageInterface.sol";
+import "../platform/bondage/Bondage.sol";
+import "../lib/ownership/ZapCoordinatorInterface.sol";
 
 contract AuxiliaryMarket is Helper{
 
@@ -11,19 +16,39 @@ contract AuxiliaryMarket is Helper{
     uint[] public assetPrices = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000,
     10000, 11000, 12000, 13000, 14000, 15000, 16000];
 
-
+    // Price of $0.01 USD
     uint zap = 28449300676025;
 
+    function random() public returns (uint) {
+        return uint(keccak256(abi.encodePacked(block.difficulty, now, assetPrices)));
+    }
 
     struct AuxMarketHolder{
         uint256 priceBoughtIn;
         uint256 subTokensOwned;
     }
 
-    function random() public returns (uint) {
-        return uint(keccak256(abi.encodePacked(block.difficulty, now, assetPrices)));
-    }
+    RegistryInterface public registry;
+    BondageInterface public bondage;
+    ZapCoordinatorInterface public coordinator;
 
+    bytes32 public endPoint = "Bond to Auxiliary Market";
+    int256[] curve = [1,1,1000];
+
+    constructor(address _zapCoor) public {
+        coordinator = ZapCoordinatorInterface(_zapCoor);
+        address bonadgeAddr = coordinator.getContract("BONDAGE");
+        address mainMarketAddr = coordinator.getContract("MAINMARKET");
+
+        address registryAddress = coordinator.getContract("REGISTRY");
+        registry = RegistryInterface(registryAddress);
+
+        // initialize in registry
+        bytes32 title = "Main market";
+
+        registry.initiateProvider(12345, title);
+        registry.initiateProviderCurve(endPoint, curve1, address(0));
+    }
 
     //Mapping of holders
     mapping (address => AuxMarketHolder) holders;

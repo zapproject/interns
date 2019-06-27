@@ -45,7 +45,6 @@ contract MainMarket {
 
         // return bondage.delegateBond(msg.sender, address(this), endPoint, amount);
     }
-    
 
 
     //Disperse 5% fees to all
