@@ -56,7 +56,7 @@ library SafeMath {
 
 // File: contracts/token/Token.sol
 
-contract MainMarketToken is MainMarketTokenInterface {
+contract AuxiliaryMarketToken is AuxiliaryMarketTokenInterface {
     using SafeMath for uint256;
 
     string public name;
@@ -86,8 +86,8 @@ contract MainMarketToken is MainMarketTokenInterface {
     }
 
     constructor(string memory _name, string memory _symbol) public {
-        name = "MainMarketToken";
-        symbol = "MMT";
+        name = "AuxiliaryMarketToken";
+        symbol = "AMT";
         totalSupply_ = 100000000;
         balances[address(this)] = totalSupply_;
     }
