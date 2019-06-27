@@ -40,7 +40,6 @@ contract AuxiliaryMarket is Helper{
         address bonadgeAddr = coordinator.getContract("BONDAGE");
         address mainMarketAddr = coordinator.getContract("MAINMARKET");
 
-<<<<<<< HEAD
         address registryAddress = coordinator.getContract("REGISTRY");
         registry = RegistryInterface(registryAddress);
 
@@ -51,8 +50,6 @@ contract AuxiliaryMarket is Helper{
         registry.initiateProviderCurve(endPoint, curve, address(0));
     }
 
-=======
->>>>>>> 00c1898ec4f8860f56762f3e810c587c159c73da
     //Mapping of holders
     mapping (address => AuxMarketHolder) holders;
 
