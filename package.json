@@ -1,0 +1,45 @@
+{
+  "name": "zap_contracts",
+  "version": "0.0.1",
+  "description": "Orcales market contracts",
+  "main": "truffle migrate",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "compile": "truffle compile",
+    "develop": "truffle develop",
+    "test": "bash scripts/test.sh"
+  },
+  "repository": {
+    "type": "git",
+    "github.com": "zapproject/ZapContracts",
+    "url": "https://github.com/zapproject/ZapContracts"
+  },
+  "keywords": [
+    "smart",
+    "contracts"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "bignumber.js": "^7.2.1",
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
+    "chai-bignumber": "^2.0.2",
+    "ethjs": "^0.4.0",
+    "ganache-cli": "^6.2.5",
+    "truffle": "^5.0.22",
+    "truffle-hdwallet-provider": "0.0.5",
+    "truffle-hdwallet-provider-privkey": "^0.2.0",
+    "uuid-parse": "^1.0.0",
+    "web3-utils": "^1.0.0-beta.37"
+  },
+  "devDependencies": {
+    "babel-register": "^6.26.0"
+  }
+}
