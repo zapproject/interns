@@ -5,6 +5,7 @@ import "../platform/registry/Registry.sol";
 import "../platform/bondage/BondageInterface.sol";
 import "../platform/bondage/Bondage.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
+import "../token/ZapToken.sol";
 import "./MainMarketTokenInterface.sol";
 
 
@@ -63,11 +64,15 @@ contract MainMarket {
 
     struct MainMarketHolder{
         uint256 tokensOwned;
+        uint256 zapBalance;
     }
 
     RegistryInterface public registry;
     BondageInterface public bondage;
     ZapCoordinatorInterface public coordinator;
+
+    ZapToken zapToken;
+
     MainMarketTokenInterface public mainMarketToken;
 
     bytes32 public endPoint = "Bond To Main Market";
@@ -75,7 +80,7 @@ contract MainMarket {
 
 
     mapping (address => MainMarketHolder) holders;
-
+    
 
 
     constructor(address _zapCoor) public {
@@ -84,6 +89,9 @@ contract MainMarket {
         address mainMarketAddress = coordinator.getContract("MAINMARKET");
         mainMarketToken = MainMarketTokenInterface(mainMarketAddress);
         bondage = BondageInterface(bondageAddr);
+
+        zapToken = ZapToken(coordinator.getContract("ZAP_TOKEN"));
+        mainToken = MainMarketToken(coordinator.getContract("MAIN_MARKET_TOKEN"));
 
         address registryAddress = coordinator.getContract("REGISTRY");
         registry = RegistryInterface(registryAddress);
@@ -94,17 +102,21 @@ contract MainMarket {
         registry.initiateProvider(12345, title);
         registry.initiateProviderCurve(endPoint, curve1, address(0));
 
+
     }
 
-    function depositZap (uint256 amount) payable {
+
+    function depositZap (uint256 amount) public payable {
         uint256 zapBalance = zapToken.getBalance(msg.sender);
 
         //amount must be equal to balnce of zap deposited
         require (zapBalance >= amount, "not enough zap in account");
+
         holders[msg.sender].zapBalance = amount;
 
         zapToken.transfer(address(this), msg.sender, amount);
     }
+
 
     function buyAndBond(uint256 amount) external {
         uint zapSpent = bondage.delegateBond(msg.sender, address(this), endPoint, amount);
@@ -119,17 +131,23 @@ contract MainMarket {
         zapToken.allocate(address(this), amount);
     }
 
-
+     function getMMTBalance(address _owner) external returns(uint256) {
+        return mainMarketToken.balanceOf(_owner);
+    }
 
     //Disperse 5% fees to all
     function payFee() public payable {}
-    // Exchange Zap for MainMarket Token
+
+
+    function sellAndUnbond(uint256 amount) public payable{
+        uint netZap = bondage.unbound(msg.sender, address(this), endPoint, amount);
+        zapToken.transfer(holders[address(this)],holders[msg.sender],netZap);
+    }
 
     function getZapPrice() public view {}
 
-    // User deposits Zap into Main Market
-    function deposit() external payable {}
-    // Withdraw
+
+
     function withdraw(address holder, uint256 amount) external returns(uint256) {
         uint256 fee = (amount.mul(5)).div(100);
         return fee;
