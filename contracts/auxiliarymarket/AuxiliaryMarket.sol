@@ -9,8 +9,16 @@ import "../platform/registry/Registry.sol";
 import "../platform/bondage/BondageInterface.sol";
 import "../platform/bondage/Bondage.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
+import "../token/ZapToken.sol";
 
 contract AuxiliaryMarket is Helper{
+        constructor(address _zapCoor) public {
+        coordinator = ZapCoordinatorInterface(_zapCoor);
+        address mainMarketAddr = coordinator.getContract("MAINMARKET");
+        address zapTokenAddress = coordinator.getContract("ZAP_TOKEN");
+        zapToken = ZapToken(zapTokenAddress);
+    
+    }
 
 
     uint[] public assetPrices = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000,
@@ -35,26 +43,20 @@ contract AuxiliaryMarket is Helper{
     bytes32 public endPoint = "Bond to Auxiliary Market";
     int256[] curve = [1,1,1000];
 
-    constructor(address _zapCoor) public {
-        coordinator = ZapCoordinatorInterface(_zapCoor);
-        address bonadgeAddr = coordinator.getContract("BONDAGE");
-        address mainMarketAddr = coordinator.getContract("MAINMARKET");
-
-        address registryAddress = coordinator.getContract("REGISTRY");
-        registry = RegistryInterface(registryAddress);
-
-        // initialize in registry
-        bytes32 title = "Auxiliary Market";
-
-        registry.initiateProvider(12345, title);
-        registry.initiateProviderCurve(endPoint, curve, address(0));
-    }
-
     //Mapping of holders
     mapping (address => AuxMarketHolder) holders;
 
     // Transfer zap from holder to market
-    function transferZap() private {}
+    function transferZap() private {
+        // get current price
+        currentAssetPrice = getCurrentPrice();
+        // check how much zap received // transfer from balalnce of(). use zap coordinator to get address of zap token contract
+        uint zapBalance = zapToken.balanceOf();
+        // transfer equivalent amount in subtoken
+        // holder struct with price bought in and amount of subtokens
+        // Find average price
+        // Map holder msg.sender to key: value being holder struct
+    }
     // Transfer SubToken to holder
     function transferSubToken() private {}
 
