@@ -56,7 +56,7 @@ library SafeMath {
 
 // File: contracts/token/Token.sol
 
-contract MainMarketToken is MainMarketTokenInterface {
+contract AuxiliaryMarketToken is AuxiliaryMarketTokenInterface {
     using SafeMath for uint256;
 
     string public name;
