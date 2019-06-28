@@ -70,7 +70,7 @@ contract MainMarket {
     ZapCoordinatorInterface public coordinator;
     MainMarketTokenInterface public mainMarketToken;
 
-    bytes32 public endPoint = "Bond To Main Maket";
+    bytes32 public endPoint = "Bond To Main Market";
     int256[] curve1 = [1,1,1000];
 
 
@@ -96,13 +96,27 @@ contract MainMarket {
 
     }
 
-    function buyAndBond(uint256 amount) payable external {
+    function depositZap (uint256 amount) payable {
+        uint256 zapBalance = zapToken.getBalance(msg.sender);
+
+        //amount must be equal to balnce of zap deposited
+        require (zapBalance >= amount, "not enough zap in account");
+        holders[msg.sender].zapBalance = amount;
+
+        zapToken.transfer(address(this), msg.sender, amount);
+    }
+
+    function buyAndBond(uint256 amount) external {
         uint zapSpent = bondage.delegateBond(msg.sender, address(this), endPoint, amount);
         mainMarketToken.transfer(msg.sender, amount);
     }
 
     function getMMTBalance(address _owner) external returns(uint256) {
         return mainMarketToken.balanceOf(_owner);
+    }
+
+    function allocateZap(uint256 amount) public {
+        zapToken.allocate(address(this), amount);
     }
 
 
