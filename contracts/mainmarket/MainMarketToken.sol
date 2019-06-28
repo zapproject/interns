@@ -85,7 +85,7 @@ contract MainMarketToken is MainMarketTokenInterface {
         _;
     }
 
-    constructor(string memory _name, string memory _symbol) public {
+    constructor() public {
         name = "MainMarketToken";
         symbol = "MMT";
         totalSupply_ = 100000000;
