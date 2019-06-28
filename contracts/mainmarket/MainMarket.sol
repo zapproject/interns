@@ -1,9 +1,7 @@
 pragma solidity ^0.5.8;
 
 import "../platform/registry/RegistryInterface.sol";
-import "../platform/registry/Registry.sol";
 import "../platform/bondage/BondageInterface.sol";
-import "../platform/bondage/Bondage.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
 import "./MainMarketTokenInterface.sol";
@@ -13,51 +11,51 @@ import "./MainMarketTokenInterface.sol";
  * @title SafeMath
  * @dev Math operations with safety checks that throw on error
  */
-library SafeMath {
+// library SafeMath {
 
-    /**
-    * @dev Multiplies two numbers, throws on overflow.
-    */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        // Gas optimization: this is cheaper than asserting 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
-        if (a == 0) {
-            return 0;
-        }
+//     /**
+//     * @dev Multiplies two numbers, throws on overflow.
+//     */
+//     function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
+//         // Gas optimization: this is cheaper than asserting 'a' not being zero, but the
+//         // benefit is lost if 'b' is also tested.
+//         // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+//         if (a == 0) {
+//             return 0;
+//         }
 
-        c = a * b;
-        assert(c / a == b);
-        return c;
-    }
+//         c = a * b;
+//         assert(c / a == b);
+//         return c;
+//     }
 
-    /**
-    * @dev Integer division of two numbers, truncating the quotient.
-    */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        // assert(b > 0); // Solidity automatically throws when dividing by 0
-        // uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-        return a / b;
-    }
+//     /**
+//     * @dev Integer division of two numbers, truncating the quotient.
+//     */
+//     function div(uint256 a, uint256 b) internal pure returns (uint256) {
+//         // assert(b > 0); // Solidity automatically throws when dividing by 0
+//         // uint256 c = a / b;
+//         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+//         return a / b;
+//     }
 
-    /**
-    * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
-    */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        assert(b <= a);
-        return a - b;
-    }
+//     /**
+//     * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+//     */
+//     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+//         assert(b <= a);
+//         return a - b;
+//     }
 
-    /**
-    * @dev Adds two numbers, throws on overflow.
-    */
-    function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        c = a + b;
-        assert(c >= a);
-        return c;
-    }
-}
+//     /**
+//     * @dev Adds two numbers, throws on overflow.
+//     */
+//     function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
+//         c = a + b;
+//         assert(c >= a);
+//         return c;
+//     }
+// }
 
 contract MainMarket {
     using SafeMath for uint256;
@@ -91,7 +89,6 @@ contract MainMarket {
         bondage = BondageInterface(bondageAddr);
 
         zapToken = ZapToken(coordinator.getContract("ZAP_TOKEN"));
-        mainToken = MainMarketToken(coordinator.getContract("MAIN_MARKET_TOKEN"));
 
         address registryAddress = coordinator.getContract("REGISTRY");
         registry = RegistryInterface(registryAddress);
@@ -107,20 +104,32 @@ contract MainMarket {
 
 
     function depositZap (uint256 amount) public payable {
-        uint256 zapBalance = zapToken.getBalance(msg.sender);
+        uint256 zapBalance = zapToken.balanceOf(msg.sender);
 
         //amount must be equal to balnce of zap deposited
         require (zapBalance >= amount, "not enough zap in account");
 
         holders[msg.sender].zapBalance = amount;
 
-        zapToken.transfer(address(this), msg.sender, amount);
+        zapToken.transferFrom(address(this), msg.sender, amount);
     }
 
 
+    //
     function buyAndBond(uint256 amount) external {
+        //to bond msg.sender needs to give zap to this contract(MainMarket)
+        depositZap(amount);
         uint zapSpent = bondage.delegateBond(msg.sender, address(this), endPoint, amount);
         mainMarketToken.transfer(msg.sender, amount);
+    }
+
+    //sell mainmarket token (param amount) in exchagne for zap token
+    function sellAndUnbond(uint256 amount) public payable{
+        mainMarketToken.transferFrom(msg.sender, address(this), amount);
+
+        uint netZap = bondage.unbond(msg.sender, endPoint, amount);
+        //unbonding gave Zap to this contract so now tranfer it to the msg.sender
+        zapToken.transferFrom(address(this), msg.sender,netZap);
     }
 
     function getMMTBalance(address _owner) external returns(uint256) {
@@ -139,10 +148,6 @@ contract MainMarket {
     function payFee() public payable {}
 
 
-    function sellAndUnbond(uint256 amount) public payable{
-        uint netZap = bondage.unbound(msg.sender, address(this), endPoint, amount);
-        zapToken.transfer(holders[address(this)],holders[msg.sender],netZap);
-    }
 
     function getZapPrice() public view {}
 
