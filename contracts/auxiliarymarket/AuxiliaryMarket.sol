@@ -69,7 +69,6 @@ contract AuxiliaryMarket is Helper{
         address mainMarketAddr = coordinator.getContract("MAINMARKET");
         address zapTokenAddress = coordinator.getContract("ZAP_TOKEN");
         zapToken = ZapToken(zapTokenAddress);
-
     }
 
 
@@ -99,7 +98,7 @@ contract AuxiliaryMarket is Helper{
     mapping (address => AuxMarketHolder) holders;
 
     // Transfer zap from holder to market
-    function exchangeZapForSubtoken(uint256 _quantity) private {
+    function buyAuxiliaryToken(uint256 _quantity) private {
         // get current price
         _currentAssetPrice = getCurrentPrice() * zap;
         unit256 _totalWei = _currentAssetPrice * _quantity
@@ -113,7 +112,6 @@ contract AuxiliaryMarket is Helper{
         // Find average price
         // Map holder msg.sender to key: value being holder struct
     }
-
     // Sends Zap to Main Market when asset is sold at loss
     function sendToMainMarket() private {}
     // Sends Zap to Main Market when asset is sold at gain
