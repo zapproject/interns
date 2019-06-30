@@ -83,7 +83,7 @@ contract AuxiliaryMarket is Helper{
     }
 
     struct AuxMarketHolder{
-        uint256 priceBoughtIn;
+        uint256 avgPrice;
         uint256 subTokensOwned;
     }
 
@@ -97,20 +97,18 @@ contract AuxiliaryMarket is Helper{
     //Mapping of holders
     mapping (address => AuxMarketHolder) holders;
 
+    // Transfer zap from holder to market
     function buyAuxiliaryToken(uint256 _quantity) private {
         // get current price
-        currentAssetPrice = getCurrentPrice();
-        uint256 totalWei = _quantity * toWei(currentAssetPrice);
+        _currentAssetPrice = getCurrentPrice() * zap;
+        unit256 _totalWei = _currentAssetPrice * _quantity
         // check how much zap received // transfer from balalnce of(). use zap coordinator to get address of zap token contract
-        uint256 zapBalanceInWei = toWei(zapToken.balanceOf(msg.sender));
-        uint256 netWei = zapBalanceInWei - totalWei;
-        
-
-
-        require( zapBalanceInWei > totalWei, "Not enough zap in wallet to buy subToken");
+        require(zapToken.balanceOf() * zap > _totalWei, "Not enough Zap in Wallet");
         // transfer equivalent amount in subtoken
         zapToken.transfer()
         // holder struct with price bought in and amount of subtokens
+        holders[msg.sender].avgPrice = div((_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned),(_quantity + holders[msg.sender].subTokensOwned));
+        holders[msg.sender].subTokensOwned = holders[msg.sender].subTokensOwned + _quantity;
         // Find average price
         // Map holder msg.sender to key: value being holder struct
     }
