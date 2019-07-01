@@ -102,11 +102,11 @@ contract AuxiliaryMarket is Helper{
     function exchangeZapForSubtoken(uint256 _quantity) private {
         // get current price
         _currentAssetPrice = getCurrentPrice() * zap;
-        unit256 _totalWei = _currentAssetPrice * _quantity
+        unit256 _totalWei = _currentAssetPrice * _quantity;
         // check how much zap received // transfer from balalnce of(). use zap coordinator to get address of zap token contract
         require(zapToken.balanceOf() * zap > _totalWei, "Not enough Zap in Wallet");
         // transfer equivalent amount in subtoken
-        zapToken.transfer()
+        zapToken.transfer();
         // holder struct with price bought in and amount of subtokens
         holders[msg.sender].avgPrice = div((_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned),(_quantity + holders[msg.sender].subTokensOwned));
         holders[msg.sender].subTokensOwned = holders[msg.sender].subTokensOwned + _quantity;
