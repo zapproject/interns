@@ -70,7 +70,7 @@ contract MainMarket {
     BondageInterface public bondage;
     ZapCoordinatorInterface public coordinator;
 
-    ZapToken zapToken;
+    ZapToken public zapToken;
 
     MainMarketTokenInterface public mainMarketToken;
 
@@ -85,8 +85,8 @@ contract MainMarket {
     constructor(address _zapCoor) public {
         coordinator = ZapCoordinatorInterface(_zapCoor);
         address bondageAddr = coordinator.getContract("BONDAGE");
-        address mainMarketAddress = coordinator.getContract("MAINMARKET");
-        mainMarketToken = MainMarketTokenInterface(mainMarketAddress);
+        address mainMarketTokenAddress = coordinator.getContract("MAINMARKET_TOKEN");
+        mainMarketToken = MainMarketTokenInterface(mainMarketTokenAddress);
         bondage = BondageInterface(bondageAddr);
 
         zapToken = ZapToken(coordinator.getContract("ZAP_TOKEN"));
@@ -112,16 +112,22 @@ contract MainMarket {
 
         holders[msg.sender].zapBalance = quantity;
 
-        zapToken.transferFrom(address(this), msg.sender, quantity);
+        zapToken.transferFrom(msg.sender, address(this), quantity);
     }
 
 
     //
     function buyAndBond(uint256 amount) external {
         //to bond msg.sender needs to give zap to this contract(MainMarket)
+        address bondageAddr = coordinator.getContract("BONDAGE");
+        zapToken.approve(bondageAddr, amount);
         uint zapSpent = bondage.delegateBond(msg.sender, address(this), endPoint, amount);
-        mainMarketToken.transfer(msg.sender, amount);
+        address mainMarketTokenAddress = coordinator.getContract("MAINMARKET_TOKEN");
+        mainMarketToken.approve(mainMarketTokenAddress, amount);
+        allocateMMT(amount);
     }
+
+
 
     //Sell Main Market token (param amount) in exchange for zap token
     function sellAndUnbond(uint256 amount) public payable{
@@ -134,7 +140,11 @@ contract MainMarket {
     }
 
     function getZapBalance(address _owner) external returns(uint256) {
-        return mainMarketToken.balanceOf(_owner);
+        return zapToken.balanceOf(_owner);
+    }
+
+    function allocateMMT(uint256 amount) public {
+        mainMarketToken.mint(msg.sender, amount);
     }
 
     function allocateZap(uint256 amount) public {
