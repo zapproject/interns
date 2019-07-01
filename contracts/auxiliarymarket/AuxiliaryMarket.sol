@@ -15,61 +15,63 @@ import "../token/ZapToken.sol";
  * @title SafeMath
  * @dev Math operations with safety checks that throw on error
  */
-library SafeMath {
-
-    /**
-    * @dev Multiplies two numbers, throws on overflow.
-    */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        // Gas optimization: this is cheaper than asserting 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
-        if (a == 0) {
-            return 0;
-        }
-
-        c = a * b;
-        assert(c / a == b);
-        return c;
-    }
-
-    /**
-    * @dev Integer division of two numbers, truncating the quotient.
-    */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        // assert(b > 0); // Solidity automatically throws when dividing by 0
-        // uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-        return a / b;
-    }
-
-    /**
-    * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
-    */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        assert(b <= a);
-        return a - b;
-    }
-
-    /**
-    * @dev Adds two numbers, throws on overflow.
-    */
-    function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        c = a + b;
-        assert(c >= a);
-        return c;
-    }
-}
+//library SafeMath {
+//
+//    /**
+//    * @dev Multiplies two numbers, throws on overflow.
+//    */
+//    function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
+//        // Gas optimization: this is cheaper than asserting 'a' not being zero, but the
+//        // benefit is lost if 'b' is also tested.
+//        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+//        if (a == 0) {
+//            return 0;
+//        }
+//
+//        c = a * b;
+//        assert(c / a == b);
+//        return c;
+//    }
+//
+//    /**
+//    * @dev Integer division of two numbers, truncating the quotient.
+//    */
+//    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+//        // assert(b > 0); // Solidity automatically throws when dividing by 0
+//        // uint256 c = a / b;
+//        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+//        return a / b;
+//    }
+//
+//    /**
+//    * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+//    */
+//    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+//        assert(b <= a);
+//        return a - b;
+//    }
+//
+//    /**
+//    * @dev Adds two numbers, throws on overflow.
+//    */
+//    function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
+//        c = a + b;
+//        assert(c >= a);
+//        return c;
+//    }
+//}
 
 contract AuxiliaryMarket is Helper{
     using SafeMath for uint256;
+
+
+    ZapToken zapToken;
 
     constructor(address _zapCoor) public {
         coordinator = ZapCoordinatorInterface(_zapCoor);
         address mainMarketAddr = coordinator.getContract("MAINMARKET");
         address zapTokenAddress = coordinator.getContract("ZAP_TOKEN");
         zapToken = ZapToken(zapTokenAddress);
-
     }
 
 
@@ -99,21 +101,20 @@ contract AuxiliaryMarket is Helper{
     mapping (address => AuxMarketHolder) holders;
 
     // Transfer zap from holder to market
-    function exchangeZapForSubtoken(uint256 _quantity) private {
+    function buyAuxiliaryToken(uint256 _quantity) private {
         // get current price
-        _currentAssetPrice = getCurrentPrice() * zap;
-        unit256 _totalWei = _currentAssetPrice * _quantity;
+        //_currentAssetPrice = getCurrentPrice() * zap;
+        //uint256 _totalWei = _currentAssetPrice * _quantity;
         // check how much zap received // transfer from balalnce of(). use zap coordinator to get address of zap token contract
-        require(zapToken.balanceOf() * zap > _totalWei, "Not enough Zap in Wallet");
+        //require(zapToken.balanceOf() * zap > _totalWei, "Not enough Zap in Wallet");
         // transfer equivalent amount in subtoken
-        zapToken.transfer();
+        //zapToken.transfer();
         // holder struct with price bought in and amount of subtokens
-        holders[msg.sender].avgPrice = div((_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned),(_quantity + holders[msg.sender].subTokensOwned));
+        //holders[msg.sender].avgPrice = div((_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned),(_quantity + holders[msg.sender].subTokensOwned));
         holders[msg.sender].subTokensOwned = holders[msg.sender].subTokensOwned + _quantity;
         // Find average price
         // Map holder msg.sender to key: value being holder struct
     }
-
     // Sends Zap to Main Market when asset is sold at loss
     function sendToMainMarket() private {}
     // Sends Zap to Main Market when asset is sold at gain

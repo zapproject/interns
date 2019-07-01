@@ -110,16 +110,15 @@ contract MainMarket {
         //amount must be equal to balance of zap deposited
         require (zapBalance >= quantity, "Not enough Zap in account");
 
-        holders[msg.sender].zapBalance = amount;
+        holders[msg.sender].zapBalance = quantity;
 
-        zapToken.transferFrom(address(this), msg.sender, amount);
+        zapToken.transferFrom(address(this), msg.sender, quantity);
     }
 
 
     //
     function buyAndBond(uint256 amount) external {
         //to bond msg.sender needs to give zap to this contract(MainMarket)
-        depositZap(amount);
         uint zapSpent = bondage.delegateBond(msg.sender, address(this), endPoint, amount);
         mainMarketToken.transfer(msg.sender, amount);
     }
@@ -132,10 +131,6 @@ contract MainMarket {
 
         //Unbonding Zap from this contract so now tranfer it to the msg.sender
         zapToken.transferFrom(address(this), msg.sender, netZap);
-    }
-
-    function getMMTBalance(address _owner) external returns(uint256) {
-        return mainMarketToken.balanceOf(_owner);
     }
 
     function getZapBalance(address _owner) external returns(uint256) {
