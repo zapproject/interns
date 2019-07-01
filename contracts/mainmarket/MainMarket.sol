@@ -60,6 +60,7 @@ import "./MainMarketTokenInterface.sol";
 contract MainMarket {
     using SafeMath for uint256;
 
+    //tokensOwner for quantity of tokens
     struct MainMarketHolder{
         uint256 tokensOwned;
         uint256 zapBalance;
@@ -103,36 +104,36 @@ contract MainMarket {
     }
 
 
-    function depositZap (uint256 amount) public payable {
+    function depositZap (uint256 quantity) external payable {
         uint256 zapBalance = zapToken.balanceOf(msg.sender);
 
-        //amount must be equal to balnce of zap deposited
-        require (zapBalance >= amount, "not enough zap in account");
+        //amount must be equal to balance of zap deposited
+        require (zapBalance >= quantity, "Not enough Zap in account");
 
-        holders[msg.sender].zapBalance = amount;
+        holders[msg.sender].zapBalance = quantity;
 
-        zapToken.transferFrom(address(this), msg.sender, amount);
+        zapToken.transferFrom(address(this), msg.sender, quantity);
     }
 
 
     //
     function buyAndBond(uint256 amount) external {
         //to bond msg.sender needs to give zap to this contract(MainMarket)
-        depositZap(amount);
         uint zapSpent = bondage.delegateBond(msg.sender, address(this), endPoint, amount);
         mainMarketToken.transfer(msg.sender, amount);
     }
 
-    //sell mainmarket token (param amount) in exchagne for zap token
+    //Sell Main Market token (param amount) in exchange for zap token
     function sellAndUnbond(uint256 amount) public payable{
         mainMarketToken.transferFrom(msg.sender, address(this), amount);
 
         uint netZap = bondage.unbond(msg.sender, endPoint, amount);
-        //unbonding gave Zap to this contract so now tranfer it to the msg.sender
-        zapToken.transferFrom(address(this), msg.sender,netZap);
+
+        //Unbonding Zap from this contract so now tranfer it to the msg.sender
+        zapToken.transferFrom(address(this), msg.sender, netZap);
     }
 
-    function getMMTBalance(address _owner) external returns(uint256) {
+    function getZapBalance(address _owner) external returns(uint256) {
         return mainMarketToken.balanceOf(_owner);
     }
 
@@ -144,27 +145,18 @@ contract MainMarket {
         return mainMarketToken.balanceOf(_owner);
     }
 
-    //Disperse 5% fees to all
-    function payFee() public payable {}
-
 
 
     function getZapPrice() public view {}
 
 
-
+    //Withdraw 5% from
     function withdraw(address holder, uint256 amount) external returns(uint256) {
         uint256 fee = (amount.mul(5)).div(100);
         return fee;
     }
 
-    // List all Auxiliary Markets
-    function viewAuxiliaryMarkets() external view {}
-    // checks if Auxiliary Market Exists
-    function auxiliaryMarketExists() external view{}
-    // Checks on a specific Auxiliary Market
-    function getAuxiliaryMarket(address) external view{}
 
     // Destroys the contract when there is no more Zap
-    function selfDestruct() private {}
+    function destroyMainMarket() private {}
 }
