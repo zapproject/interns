@@ -2,14 +2,9 @@ pragma solidity ^0.5.8;
 
 import "../mainmarket/MainMarket.sol";
 import "./AuxiliaryMarketInterface.sol";
-import "./Helper.sol";
-import "../lib/ownership/ZapCoordinatorInterface.sol";
-import "../platform/registry/RegistryInterface.sol";
-import "../platform/registry/Registry.sol";
-import "../platform/bondage/BondageInterface.sol";
-import "../platform/bondage/Bondage.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
+import "./Helper.sol";
 
 /**
  * @title SafeMath
@@ -90,12 +85,7 @@ contract AuxiliaryMarket is Helper{
         uint256 subTokensOwned;
     }
 
-    RegistryInterface public registry;
-    BondageInterface public bondage;
     ZapCoordinatorInterface public coordinator;
-
-    bytes32 public endPoint = "Bond to Auxiliary Market";
-    int256[] curve = [1,1,1000];
 
     //Mapping of holders
     mapping (address => AuxMarketHolder) holders;
