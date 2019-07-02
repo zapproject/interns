@@ -66,8 +66,7 @@ contract AuxiliaryMarket is Helper{
     constructor(address _zapCoor) public {
         coordinator = ZapCoordinatorInterface(_zapCoor);
         address mainMarketAddr = coordinator.getContract("MAINMARKET");
-        address zapTokenAddress = coordinator.getContract("ZAP_TOKEN");
-        zapToken = ZapToken(zapTokenAddress);
+        zapToken = ZapToken(coordinator.getContract("ZAP_TOKEN"));
     }
 
 
@@ -84,35 +83,38 @@ contract AuxiliaryMarket is Helper{
     struct AuxMarketHolder{
         uint256 avgPrice;
         uint256 subTokensOwned;
+
     }
 
     ZapCoordinatorInterface public coordinator;
 
     //Mapping of holders
     mapping (address => AuxMarketHolder) holders;
-    
-    //allocates Zap
-    function allocateZap(uint256 amount) public {
-        zapToken.allocate(address(this), amount);
-    }
 
     // Transfer zap from holder to market
-    function buyAuxiliaryToken(uint256 _quantity) private {
+    function buyAuxiliaryToken(uint256 _quantity) public payable {
+        // //TODO: Exchange AuxMarketToken for Zap
+        // AuxMarketHolder memory holder = AuxMarketHolder(currentAssetPrice, quantity);
+        // holders[msg.sender] = holder;
         // get current price
-        //_currentAssetPrice = getCurrentPrice() * zap;
-        //uint256 _totalWei = _currentAssetPrice * _quantity;
+        uint256 _currentAssetPrice = getCurrentPrice() * zap;
+        uint256 _totalWei = _currentAssetPrice * _quantity;
+
         // check how much zap received // transfer from balalnce of(). use zap coordinator to get address of zap token contract
-        //require(zapToken.balanceOf() * zap > _totalWei, "Not enough Zap in Wallet");
+        require(getBalance(address(this)) * zap > _totalWei, "Not enough Zap in Wallet");
         // transfer equivalent amount in subtoken
         //zapToken.transfer();
         // holder struct with price bought in and amount of subtokens
-        //holders[msg.sender].avgPrice = div((_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned),(_quantity + holders[msg.sender].subTokensOwned));
+        holders[msg.sender].avgPrice =
+        (_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned).div(
+            (_quantity + holders[msg.sender].subTokensOwned)
+        );
         holders[msg.sender].subTokensOwned = holders[msg.sender].subTokensOwned + _quantity;
 
         // Map holder msg.sender to key: value being holder struct
     }
 
-    function sellAuxiliaryToken(uint256 _quantity) private {
+    function sellAuxiliaryToken(uint256 _quantity) public payable {
         // Sends Zap to Main Market when asset is sold at loss
         // function sendToMainMarket() private {}
         // Sends Zap to Main Market when asset is sold at gain
@@ -125,31 +127,15 @@ contract AuxiliaryMarket is Helper{
         return assetPrices[random() % num];
     }
     // Grabs User's current balance of SubTokens
-    function getBalance() public view returns (uint256) {
-        return holders[msg.sender].subTokensOwned;
-    }
-    // User can sell Subtoken back to Aux Market for Zap
-    function sellAsset() public {
-
+    function getBalance(address _address) public view returns (uint256) {
+        return zapToken.balanceOf(_address);
     }
 
     function allocateZap(uint256 amount) public {
         zapToken.allocate(address(this), amount);
     }
 
-    // User can buy Subtoken from Aux Market for Zap
-    function buyAsset(uint quantity) public payable {
-        uint256 currentAssetPrice = getCurrentPrice();
-        //TODO: Exchange AuxMarketToken for Zap
-        AuxMarketHolder memory holder = AuxMarketHolder(currentAssetPrice, quantity);
-        holders[msg.sender] = holder;
+    function test() public returns(uint256){
+       return holders[msg.sender].avgPrice;
     }
-
-
-    //Stretch
-
-    // User can trade Subtoken to other users
-    //function trade() public {}
-
-
 }
