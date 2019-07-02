@@ -1,5 +1,6 @@
 pragma solidity ^0.5.8;
-
+//experimental allows returning structs in function
+pragma experimental ABIEncoderV2;
 import "../platform/registry/RegistryInterface.sol";
 import "../platform/bondage/BondageInterface.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
@@ -7,61 +8,12 @@ import "../token/ZapToken.sol";
 import "./MainMarketTokenInterface.sol";
 
 
-/**
- * @title SafeMath
- * @dev Math operations with safety checks that throw on error
- */
-// library SafeMath {
-
-//     /**
-//     * @dev Multiplies two numbers, throws on overflow.
-//     */
-//     function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
-//         // Gas optimization: this is cheaper than asserting 'a' not being zero, but the
-//         // benefit is lost if 'b' is also tested.
-//         // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
-//         if (a == 0) {
-//             return 0;
-//         }
-
-//         c = a * b;
-//         assert(c / a == b);
-//         return c;
-//     }
-
-//     /**
-//     * @dev Integer division of two numbers, truncating the quotient.
-//     */
-//     function div(uint256 a, uint256 b) internal pure returns (uint256) {
-//         // assert(b > 0); // Solidity automatically throws when dividing by 0
-//         // uint256 c = a / b;
-//         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-//         return a / b;
-//     }
-
-//     /**
-//     * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
-//     */
-//     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-//         assert(b <= a);
-//         return a - b;
-//     }
-
-//     /**
-//     * @dev Adds two numbers, throws on overflow.
-//     */
-//     function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
-//         c = a + b;
-//         assert(c >= a);
-//         return c;
-//     }
-// }
-
 contract MainMarket {
     using SafeMath for uint256;
 
     //tokensOwner for quantity of tokens
     struct MainMarketHolder{
+        bool initialized;
         uint256 tokensOwned;
         uint256 zapBalance;
     }
@@ -103,28 +55,43 @@ contract MainMarket {
 
     }
 
+    function getHolder(address addr) public returns(MainMarketHolder memory) {
+        MainMarketHolder storage holder = holders[msg.sender];
+        if(!holder.initialized) {
+            holder.initialized = true;
+            holder.tokensOwned = 0;
+            holder.zapBalance = 0;
+        }
 
-    function depositZap (uint256 quantity) external payable {
-        uint256 zapBalance = zapToken.balanceOf(msg.sender);
-
-        //amount must be equal to balance of zap deposited
-        require (zapBalance >= quantity, "Not enough Zap in account");
-
-        holders[msg.sender].zapBalance = quantity;
-
-        zapToken.transferFrom(msg.sender, address(this), quantity);
+        return holder;
     }
 
 
-    //
-    function buyAndBond(uint256 amount) external {
-        //to bond msg.sender needs to give zap to this contract(MainMarket)
+//    function depositZap(uint256 amount) external payable {
+//        uint256 zapBalance = zapToken.balanceOf(msg.sender);
+//
+//        //amount must be equal to balance of zap deposited
+//        require (zapBalance >= amount, "Not enough Zap in account");
+//        MainMarketHolder memory holder = getHolder(msg.sender);
+//        holder.zapBalance = amount;
+//
+//        zapToken.transferFrom(msg.sender, address(this), amount);
+//    }
+
+
+    function approve(uint256 amount) public hasZap(amount) hasApprovedZap(amount) returns (bool) {
+        zapToken.transferFrom(msg.sender, address(this), amount);
         address bondageAddr = coordinator.getContract("BONDAGE");
-        zapToken.approve(bondageAddr, amount);
-        uint zapSpent = bondage.delegateBond(msg.sender, address(this), endPoint, amount);
+        return zapToken.approve(bondageAddr, amount);
+    }
+
+
+    //Mint MMT to this contract before bonding so MainMarket is
+    //able to transfer tokens to User
+    function bond(uint256 dots) external {
+        uint zapSpent = bondage.bond(address(this), endPoint, dots);
         address mainMarketTokenAddress = coordinator.getContract("MAINMARKET_TOKEN");
-        mainMarketToken.approve(mainMarketTokenAddress, amount);
-        allocateMMT(amount);
+        mainMarketToken.transfer(msg.sender, dots);
     }
 
 
@@ -143,12 +110,9 @@ contract MainMarket {
         return zapToken.balanceOf(_owner);
     }
 
-    function allocateMMT(uint256 amount) public {
-        mainMarketToken.mint(msg.sender, amount);
-    }
-
+    //For Testing purposes
     function allocateZap(uint256 amount) public {
-        zapToken.allocate(address(this), amount);
+        zapToken.allocate(msg.sender, amount);
     }
 
      function getMMTBalance(address _owner) external returns(uint256) {
@@ -156,8 +120,9 @@ contract MainMarket {
     }
 
 
+    function getZapPrice() public view {
 
-    function getZapPrice() public view {}
+    }
 
 
     //Withdraw 5% from
@@ -169,4 +134,25 @@ contract MainMarket {
 
     // Destroys the contract when there is no more Zap
     function destroyMainMarket() private {}
+
+
+    //Modifiers
+
+    modifier hasZap(uint256 amount) {
+        uint256 zapBalance = zapToken.balanceOf(msg.sender);
+        require (zapBalance >= amount, "Not enough Zap in account");
+        _;
+    }
+
+    modifier hasApprovedZap(uint256 amount) {
+        uint256 allowance = zapToken.allowance(msg.sender, address(this));
+        require (allowance >= amount, "Not enough Zap allowance to be spent by MainMarket Contract");
+        _;
+    }
+
+    modifier hasApprovedMMT(uint256 amount) {
+        uint256 allowance = mainMarketToken.allowance(msg.sender, address(this));
+        require (allowance >= amount, "Not enough MMT allowance to be spent by MainMarket Contract");
+        _;
+    }
 }
