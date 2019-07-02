@@ -88,7 +88,7 @@ contract MainMarketToken is MainMarketTokenInterface {
     constructor() public {
         name = "MainMarketToken";
         symbol = "MMT";
-        totalSupply_ = 100000000;
+        totalSupply_ = 1;
         balances[address(this)] = totalSupply_;
     }
 
@@ -172,7 +172,6 @@ contract MainMarketToken is MainMarketTokenInterface {
         address _to,
         uint256 _amount
     )
-    hasMintPermission
     canMint
     public
     returns (bool)

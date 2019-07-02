@@ -4,8 +4,8 @@ import "../mainmarket/MainMarket.sol";
 import "./AuxiliaryMarketInterface.sol";
 import "./Helper.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
-import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
+import "./AuxiliaryMarketTokenInterface.sol";
 
 /**
  * @title SafeMath
@@ -86,12 +86,7 @@ contract AuxiliaryMarket is Helper{
         uint256 subTokensOwned;
     }
 
-    RegistryInterface public registry;
-    BondageInterface public bondage;
     ZapCoordinatorInterface public coordinator;
-
-    bytes32 public endPoint = "Bond to Auxiliary Market";
-    int256[] curve = [1,1,1000];
 
     //Mapping of holders
     mapping (address => AuxMarketHolder) holders;
@@ -113,14 +108,15 @@ contract AuxiliaryMarket is Helper{
         // holder struct with price bought in and amount of subtokens
         //holders[msg.sender].avgPrice = div((_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned),(_quantity + holders[msg.sender].subTokensOwned));
         holders[msg.sender].subTokensOwned = holders[msg.sender].subTokensOwned + _quantity;
-        // Find average price
+
         // Map holder msg.sender to key: value being holder struct
     }
-    // Sends Zap to Main Market when asset is sold at loss
-    function sendToMainMarket() private {}
-    // Sends Zap to Main Market when asset is sold at gain
-    function getFromMainMarket() private {
 
+    function sellAuxiliaryToken(uint256 _quantity) private {
+        // Sends Zap to Main Market when asset is sold at loss
+        // function sendToMainMarket() private {}
+        // Sends Zap to Main Market when asset is sold at gain
+        // function getFromMainMarket() private {}
     }
 
     // Grabs current price of asset
@@ -135,6 +131,10 @@ contract AuxiliaryMarket is Helper{
     // User can sell Subtoken back to Aux Market for Zap
     function sellAsset() public {
 
+    }
+
+    function allocateZap(uint256 amount) public {
+        zapToken.allocate(address(this), amount);
     }
 
     // User can buy Subtoken from Aux Market for Zap
