@@ -5,6 +5,7 @@ import "./AuxiliaryMarketInterface.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
 import "./Helper.sol";
+import "./AuxiliaryMarketTokenInterface.sol";
 
 /**
  * @title SafeMath
@@ -60,7 +61,7 @@ contract AuxiliaryMarket is Helper{
     using SafeMath for uint256;
 
 
-    ZapToken zapToken;
+    ZapToken public zapToken;
 
     constructor(address _zapCoor) public {
         coordinator = ZapCoordinatorInterface(_zapCoor);
