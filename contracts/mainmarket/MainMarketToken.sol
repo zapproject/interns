@@ -254,5 +254,5 @@ contract MainMarketToken is MainMarketTokenInterface {
         emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
         return true;
     }
-    
+
 }

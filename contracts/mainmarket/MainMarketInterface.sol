@@ -11,9 +11,5 @@ contract MainMarketInterface {
     function payFee(address, uint256) external payable returns (uint256);
     function getZapPrice() external view returns (uint256);
     function auxiliaryMarketExists(address) external view returns (bool);
-    function getAuxiliaryMarket(address) external view;
-
-//Auxiliary Market Functions
-    function viewAuxiliaryMarkets () external view returns (bytes32[] memory);
 
 }
