@@ -172,6 +172,7 @@ contract MainMarketToken is MainMarketTokenInterface {
         address _to,
         uint256 _amount
     )
+    hasMintPermission
     canMint
     public
     returns (bool)
@@ -300,4 +301,5 @@ contract MainMarketToken is MainMarketTokenInterface {
         emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
         return true;
     }
+
 }
