@@ -118,9 +118,9 @@ contract AuxiliaryMarket is Helper{
 
     function sellAuxiliaryToken(uint256 _quantity) private {
         // Sends Zap to Main Market when asset is sold at loss
-        function sendToMainMarket() private {}
+        // function sendToMainMarket() private {}
         // Sends Zap to Main Market when asset is sold at gain
-        function getFromMainMarket() private {}
+        // function getFromMainMarket() private {}
     }
 
     // Grabs current price of asset
@@ -135,6 +135,10 @@ contract AuxiliaryMarket is Helper{
     // User can sell Subtoken back to Aux Market for Zap
     function sellAsset() public {
 
+    }
+
+    function allocateZap(uint256 amount) public {
+        zapToken.allocate(address(this), amount);
     }
 
     // User can buy Subtoken from Aux Market for Zap
