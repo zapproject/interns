@@ -94,8 +94,7 @@ contract AuxiliaryMarket is Helper{
     // Transfer zap from holder to market
     function buyAuxiliaryToken(uint256 _quantity) public payable {
         // //TODO: Exchange AuxMarketToken for Zap
-        // AuxMarketHolder memory holder = AuxMarketHolder(currentAssetPrice, quantity);
-        // holders[msg.sender] = holder;
+
         // get current price
         uint256 _currentAssetPrice = getCurrentPrice() * zap;
         uint256 _totalWei = _currentAssetPrice * _quantity;
@@ -105,11 +104,14 @@ contract AuxiliaryMarket is Helper{
         // transfer equivalent amount in subtoken
         //zapToken.transfer();
         // holder struct with price bought in and amount of subtokens
-        holders[msg.sender].avgPrice =
+        uint256 avgPrice =
         (_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned).div(
             (_quantity + holders[msg.sender].subTokensOwned)
         );
-        holders[msg.sender].subTokensOwned = holders[msg.sender].subTokensOwned + _quantity;
+        uint256 quantity = holders[msg.sender].subTokensOwned + _quantity;
+
+        AuxMarketHolder memory holder = AuxMarketHolder(avgPrice, quantity);
+        holders[msg.sender] = holder;
 
         // Map holder msg.sender to key: value being holder struct
     }
