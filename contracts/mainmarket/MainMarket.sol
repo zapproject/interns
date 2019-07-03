@@ -80,11 +80,10 @@ contract MainMarket {
     }
 
     //Sell Main Market token (param amount) in exchange for zap token
-    function sellAndUnbond(uint256 amount) public payable{
-        mainMarketToken.transferFrom(msg.sender, address(this), amount);
-        uint netZap = bondage.unbond(msg.sender, endPoint, amount);
-        //Unbonding Zap from this contract so now tranfer it to the msg.sender
-        zapToken.transferFrom(address(this), msg.sender, netZap);
+    function unbond(uint256 mmtAmount) public {
+        mainMarketToken.transferFrom(msg.sender, address(this), mmtAmount);
+        uint netZap = bondage.unbond(address(this), endPoint, mmtAmount);
+        zapToken.transfer(msg.sender, netZap);
     }
 
     //For local testing purposes
@@ -130,6 +129,12 @@ contract MainMarket {
     modifier hasApprovedZap(uint256 amount) {
         uint256 allowance = zapToken.allowance(msg.sender, address(this));
         require (allowance >= amount, "Not enough Zap allowance to be spent by MainMarket Contract");
+        _;
+    }
+
+    modifier hasApprovedMMT(uint256 amount) {
+        uint256 allowance = mainMarketToken.allowance(msg.sender, address(this));
+        require (allowance >= amount, "Not enough MMT allowance to be spent by MainMarket Contract");
         _;
     }
 }
