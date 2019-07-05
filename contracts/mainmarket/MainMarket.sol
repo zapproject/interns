@@ -17,7 +17,8 @@ contract MainMarket {
         uint256 zapBalance;
     }
 
-    mapping (address => MainMarketHolder) holders;
+    mapping (address => MainMarketHolder) public holders;
+    uint256 public zapInWei = 28449300676025;
 
 
     RegistryInterface public registry;
@@ -27,7 +28,7 @@ contract MainMarket {
     MainMarketTokenInterface public mainMarketToken;
 
 
-    bytes32 public endPoint = "Bond To Main Market";
+    bytes32 public endPoint = "Bond";
     int256[] curve1 = [1,1,1000];
     
     constructor(address _zapCoor) public {
@@ -53,7 +54,7 @@ contract MainMarket {
 
     //Gets existing Holder
     //If one does not exists, creates one
-    function getHolder(address addr) public returns(MainMarketHolder memory) {
+    function getHolder(address addr) private returns(MainMarketHolder storage) {
         MainMarketHolder storage holder = holders[msg.sender];
         if(!holder.initialized) {
             holder.initialized = true;
@@ -63,10 +64,25 @@ contract MainMarket {
         return holder;
     }
 
+    //Calculates equity stake based on total Zap in Contract and
+    //holders zap balance in Main Market Contract.
+    //Decimal Precision may need to be increased in the future because
+    //a holder's stake can be less than 1%, even .0003933% if enough
+    //users are bonding to it
+    function getEquityStake(address addr) public returns(uint256) {
+        uint256 totalZap = getZapBalance(address(this));
+        MainMarketHolder storage holder = getHolder(addr);
+        uint256 holderZap = holder.zapBalance;
+        uint256 equityStake = (holderZap*10000)/(totalZap*100);
+        return equityStake;
+    }
+
     //Deposits Zap into Main Market Token Contract and approves Bondage an allowance of
     //zap amount to be used to bond
     function depositZap(uint256 amount) public hasZap(amount) hasApprovedZap(amount) returns (bool) {
         zapToken.transferFrom(msg.sender, address(this), amount);
+        MainMarketHolder storage holder = getHolder(msg.sender);
+        holder.zapBalance = amount;
         address bondageAddr = coordinator.getContract("BONDAGE");
         return zapToken.approve(bondageAddr, amount);
     }
@@ -79,10 +95,10 @@ contract MainMarket {
         mainMarketToken.transfer(msg.sender, dots);
     }
 
-    //Sell Main Market token (param amount) in exchange for zap token
-    function unbond(uint256 mmtAmount) public {
-        mainMarketToken.transferFrom(msg.sender, address(this), mmtAmount);
-        uint netZap = bondage.unbond(address(this), endPoint, mmtAmount);
+    //Exchange MMT token to unbond and collect zap from unbonded dots(i.e mmt tokens)
+    function unbond(uint256 dots) external hasApprovedMMT(dots) {
+        mainMarketToken.transferFrom(msg.sender, address(this), dots);
+        uint netZap = bondage.unbond(address(this), endPoint, dots);
         zapToken.transfer(msg.sender, netZap);
     }
 
@@ -93,12 +109,12 @@ contract MainMarket {
     }
 
     //Get current Zap Balance of Owner
-    function getZapBalance(address _owner) external returns(uint256) {
+    function getZapBalance(address _owner) public returns(uint256) {
         return zapToken.balanceOf(_owner);
     }
 
     //Get current MMT Balance of Owner
-    function getMMTBalance(address _owner) external returns(uint256) {
+    function getMMTBalance(address _owner) public returns(uint256) {
         return mainMarketToken.balanceOf(_owner);
     }
 
@@ -108,7 +124,7 @@ contract MainMarket {
 
     //Withdraw Zap from gains/losses from Auxiliary Market and disperse 5% of
     //the fee based on the percentage of bonded stake on the Main Market
-    function withdraw(address holder, uint256 amount) external returns(uint256) {
+    function withdraw(uint256 amount) external returns(uint256) {
         uint256 fee = (amount.mul(5)).div(100);
         return fee;
     }
@@ -125,13 +141,14 @@ contract MainMarket {
         _;
     }
 
-    //Requires User to approve the Main Market Contract an allowance to spend on their behalf
+    //Requires User to approve the Main Market Contract an allowance to spend zap on their behalf
     modifier hasApprovedZap(uint256 amount) {
         uint256 allowance = zapToken.allowance(msg.sender, address(this));
         require (allowance >= amount, "Not enough Zap allowance to be spent by MainMarket Contract");
         _;
     }
 
+    //Requires User to approve the Main Market Contract an allowance to spend mmt on their behalf
     modifier hasApprovedMMT(uint256 amount) {
         uint256 allowance = mainMarketToken.allowance(msg.sender, address(this));
         require (allowance >= amount, "Not enough MMT allowance to be spent by MainMarket Contract");
