@@ -18,6 +18,7 @@ contract MainMarket {
     }
 
     mapping (address => MainMarketHolder) public holders;
+    address[] holderAddresses;
     uint256 public zapInWei = 28449300676025;
 
 
@@ -69,13 +70,13 @@ contract MainMarket {
     //Decimal Precision may need to be increased in the future because
     //a holder's stake can be less than 1%, even .0003933% if enough
     //users are bonding to it
-    function getEquityStake(address addr) public returns(uint256) {
-        uint256 totalZap = getZapBalance(address(this));
-        MainMarketHolder storage holder = getHolder(addr);
-        uint256 holderZap = holder.zapBalance;
-        uint256 equityStake = (holderZap*10000)/(totalZap*100);
+    function getEquityStake (address holder) public returns (uint256) {
+        uint256 totalBonded = bondage.getDotsIssued(address(this), endPoint);
+        uint256 holderTotal = mainMarketToken.balanceOf(holder);
+        uint256 equityStake = holderTotal*100 / totalBonded;
         return equityStake;
     }
+    
 
     //Deposits Zap into Main Market Token Contract and approves Bondage an allowance of
     //zap amount to be used to bond
@@ -90,6 +91,7 @@ contract MainMarket {
     //Mint MMT to this contract before bonding so MainMarket is
     //able to transfer tokens to User
     function bond(uint256 dots) external {
+        holderAddresses.push(msg.sender);
         uint zapSpent = bondage.bond(address(this), endPoint, dots);
         address mainMarketTokenAddress = coordinator.getContract("MAINMARKET_TOKEN");
         mainMarketToken.transfer(msg.sender, dots);
@@ -126,8 +128,14 @@ contract MainMarket {
     //the fee based on the percentage of bonded stake on the Main Market
     function withdraw(uint256 amount) external returns(uint256) {
         uint256 fee = (amount.mul(5)).div(100);
-        return fee;
+        for (uint i = 0; i < holderAddresses.length; i++) {
+            uint256 equity = getEquityStake(holderAddresses[i]);
+            uint256 weiAmount = equity * fee / 100;
+            zapToken.transferFrom(msg.sender, holderAddresses[i], weiAmount);
+        }
     }
+
+
     // Destroys the contract when there is no more Zap
     function destroyMainMarket() private {}
 
