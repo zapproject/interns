@@ -15,10 +15,11 @@ contract MainMarket {
         bool initialized;
         uint256 tokensOwned;
         uint256 zapBalance;
+        uint256 dotsBonded;
     }
 
     mapping (address => MainMarketHolder) public holders;
-    address[] holderAddresses;
+    address[] public holderAddresses;
     uint256 public zapInWei = 28449300676025;
 
 
@@ -61,6 +62,7 @@ contract MainMarket {
             holder.initialized = true;
             holder.tokensOwned = 0;
             holder.zapBalance = 0;
+            holder.dotsBonded = 0;
         }
         return holder;
     }
@@ -80,6 +82,8 @@ contract MainMarket {
 
     //Deposits Zap into Main Market Token Contract and approves Bondage an allowance of
     //zap amount to be used to bond
+    //For testing
+    //100 zap == 2844930067602500 wei
     function depositZap(uint256 amount) public hasZap(amount) hasApprovedZap(amount) returns (bool) {
         zapToken.transferFrom(msg.sender, address(this), amount);
         MainMarketHolder storage holder = getHolder(msg.sender);
@@ -90,11 +94,19 @@ contract MainMarket {
 
     //Mint MMT to this contract before bonding so MainMarket is
     //able to transfer tokens to User
-    function bond(uint256 dots) external {
-        holderAddresses.push(msg.sender);
+    function bond(uint256 dots) external hasEnoughZapForDots(dots) returns(uint256) {
+        MainMarketHolder storage holder = getHolder(msg.sender);
+        //delegateBond bonds on behalf of msg.sender
+        //but unbond doesn't. It assumes the contract is bonded
+        //There is no delegateUnbond function
         uint zapSpent = bondage.bond(address(this), endPoint, dots);
-        address mainMarketTokenAddress = coordinator.getContract("MAINMARKET_TOKEN");
+        holder.zapBalance -= zapSpent;
+        //Problem is we bond the contract to itself, but msg.sender(user) should
+        //bond which is why getBoundDots will always return 0 for msg.sender(user)
+        holder.dotsBonded = bondage.getBoundDots(msg.sender, address(this), endPoint);
+        if(holder.dotsBonded > 0) holderAddresses.push(msg.sender);
         mainMarketToken.transfer(msg.sender, dots);
+        return zapSpent;
     }
 
     //Exchange MMT token to unbond and collect zap from unbonded dots(i.e mmt tokens)
@@ -133,14 +145,24 @@ contract MainMarket {
             uint256 weiAmount = equity * fee / 100;
             zapToken.transferFrom(msg.sender, holderAddresses[i], weiAmount);
         }
+        return fee;
     }
 
 
-    // Destroys the contract when there is no more Zap
+    //Destroys the contract when there is no more Zap
+    //and distributes ratio
     function destroyMainMarket() private {}
 
     //Modifiers
-
+    //Requires user to have enough zap to cover the cost of dots
+    modifier hasEnoughZapForDots(uint256 dots) {
+        uint256 zapBalance = zapToken.balanceOf(msg.sender);
+        uint256 issued = getDotsIssued(address(this), endPoint);
+        require(issued + numDots <= bondage.dotLimit(address(this), endPoint), "Error: Dot limit exceeded");
+        uint256 numZapForDots = currentCost._costOfNDots(address(this), endPoint, issued + 1, numDots - 1);
+        require (zapBalance >= numZapForDots, "Not enough Zap to buy dots");
+        _;
+    }
 
     //Requires User to have enough Zap in their account
     modifier hasZap(uint256 amount) {

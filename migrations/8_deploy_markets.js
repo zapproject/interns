@@ -20,14 +20,18 @@ module.exports = async function(deployer) {
   var zapInWei = await mm.zapInWei();
 
   //Mint initial 100 million MMT Tokens for Main Market to disperse to users who bond
-  await mmt.mint(mm.address, "10000000000000000" );
+  //100 million Main Market tokens initially minted to Main Market
+  //100 million * (10**18) = 1e+26 wei
+  await mmt.mint(mm.address, "100000000000000000000000000" );
 
-  var allocate = 500* zapInWei.toNumber();
+  var allocate = 500*zapInWei.toNumber();
 
   //Allocate 500 Zap to user for testing purposes locally
   await mm.allocateZap(allocate + "");
 
-  var approved = 100* zapInWei.toNumber();
+  var approved = 150* zapInWei.toNumber();
   //Approve MainMarket an allowance of 100 Zap to use on behalf of msg.sender(User)
   await zapToken.approve(mm.address, approved);
+  //100 zap == 2844930067602500 wei
+  await mm.depositZap('2844930067602500');
 };
