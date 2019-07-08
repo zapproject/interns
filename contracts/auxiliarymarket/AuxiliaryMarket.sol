@@ -66,6 +66,7 @@ contract AuxiliaryMarket is Helper{
     constructor(address _zapCoor) public {
         coordinator = ZapCoordinatorInterface(_zapCoor);
         address mainMarketAddr = coordinator.getContract("MAINMARKET");
+        auxiliaryMarketToken = AuxiliaryMarketTokenInterface(coordinator.getContract("AUXILIARYMARKET_TOKEN"));
         zapToken = ZapToken(coordinator.getContract("ZAP_TOKEN"));
     }
 
