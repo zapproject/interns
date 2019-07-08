@@ -7,61 +7,12 @@ import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
 import "./AuxiliaryMarketTokenInterface.sol";
 
-/**
- * @title SafeMath
- * @dev Math operations with safety checks that throw on error
- */
-//library SafeMath {
-//
-//    /**
-//    * @dev Multiplies two numbers, throws on overflow.
-//    */
-//    function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
-//        // Gas optimization: this is cheaper than asserting 'a' not being zero, but the
-//        // benefit is lost if 'b' is also tested.
-//        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
-//        if (a == 0) {
-//            return 0;
-//        }
-//
-//        c = a * b;
-//        assert(c / a == b);
-//        return c;
-//    }
-//
-//    /**
-//    * @dev Integer division of two numbers, truncating the quotient.
-//    */
-//    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-//        // assert(b > 0); // Solidity automatically throws when dividing by 0
-//        // uint256 c = a / b;
-//        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-//        return a / b;
-//    }
-//
-//    /**
-//    * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
-//    */
-//    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-//        assert(b <= a);
-//        return a - b;
-//    }
-//
-//    /**
-//    * @dev Adds two numbers, throws on overflow.
-//    */
-//    function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
-//        c = a + b;
-//        assert(c >= a);
-//        return c;
-//    }
-//}
-
 contract AuxiliaryMarket is Helper{
     using SafeMath for uint256;
 
-
+    ZapCoordinatorInterface public coordinator;
     ZapToken public zapToken;
+    AuxiliaryMarketTokenInterface public auxiliaryMarketToken;
 
     constructor(address _zapCoor) public {
         coordinator = ZapCoordinatorInterface(_zapCoor);
@@ -87,8 +38,6 @@ contract AuxiliaryMarket is Helper{
 
     }
 
-    ZapCoordinatorInterface public coordinator;
-
     //Mapping of holders
     mapping (address => AuxMarketHolder) holders;
 
@@ -103,7 +52,7 @@ contract AuxiliaryMarket is Helper{
         // check how much zap received // transfer from balalnce of(). use zap coordinator to get address of zap token contract
         require(getBalance(address(this)) * zap > _totalWei, "Not enough Zap in Wallet");
         // transfer equivalent amount in subtoken
-        //zapToken.transfer();
+        zapToken.transferFrom(msg.sender, address(this));
         // holder struct with price bought in and amount of subtokens
         uint256 avgPrice =
         (_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned).div(
@@ -137,6 +86,11 @@ contract AuxiliaryMarket is Helper{
     function allocateZap(uint256 amount) public {
         zapToken.allocate(address(this), amount);
     }
+
+    function testZapBalance() public view returns (uint256) {
+        return zapToken.balanceOf(address(this));
+    }
+
 
     function test() public returns(uint256){
        return holders[msg.sender].avgPrice;
