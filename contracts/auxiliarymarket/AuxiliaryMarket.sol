@@ -48,7 +48,7 @@ contract AuxiliaryMarket is Helper{
         // check how much zap received // transfer from balalnce of(). use zap coordinator to get address of zap token contract
         //require(zapToken.balanceOf() * zap > _totalWei, "Not enough Zap in Wallet");
         // transfer equivalent amount in subtoken
-        zapToken.transerFrom(msg.sender, address(this));
+        zapToken.transferFrom(msg.sender, address(this));
         // holder struct with price bought in and amount of subtokens
         //AuxMarketHolder memory holder = AuxMarketHolder(currentAssetPrice, quantity);
         //holders[msg.sender] = holder;

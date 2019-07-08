@@ -58,7 +58,7 @@ contract MainMarket {
 //
 //        zapToken.transferFrom(msg.sender, address(this), amount);
 //    }
-    function approve(uint256 amount) public hasZap(amount) hasApprovedZap(amount) returns (bool) {
+    function depositZap(uint256 amount) public hasZap(amount) hasApprovedZap(amount) returns (bool) {
         zapToken.transferFrom(msg.sender, address(this), amount);
         address bondageAddr = coordinator.getContract("BONDAGE");
         return zapToken.approve(bondageAddr, amount);
