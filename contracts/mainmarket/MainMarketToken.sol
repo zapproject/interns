@@ -162,8 +162,8 @@ contract MainMarketToken is MainMarketTokenInterface {
     returns (bool)
     {
         require(_to != address(0));
-        require(_value <= balances[_from]);
-        require(_value <= allowed[_from][msg.sender]);
+        require(_value <= balances[_from], "not enough MMT");
+        require(_value <= allowed[_from][msg.sender], "need to approved more mmt to the spender");
 
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
