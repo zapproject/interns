@@ -52,7 +52,7 @@ contract AuxiliaryMarket is Helper{
         // check how much zap received // transfer from balalnce of(). use zap coordinator to get address of zap token contract
         require(getBalance(address(this)) * zap > _totalWei, "Not enough Zap in Wallet");
         // transfer equivalent amount in subtoken
-        zapToken.transferFrom(msg.sender, address(this));
+        //zapToken.transferFrom(msg.sender, address(this));
         // holder struct with price bought in and amount of subtokens
         uint256 avgPrice =
         (_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned).div(
@@ -87,8 +87,8 @@ contract AuxiliaryMarket is Helper{
         zapToken.allocate(address(this), amount);
     }
 
-    function testZapBalance() public view returns (uint256) {
-        return zapToken.balanceOf(address(this));
+    function getAMTBalance(address _owner) public returns(uint256) {
+        return auxiliaryMarketToken.balanceOf(_owner);
     }
 
 
