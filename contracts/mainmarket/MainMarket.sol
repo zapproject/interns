@@ -6,16 +6,16 @@ import "../platform/bondage/BondageInterface.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
 import "./MainMarketTokenInterface.sol";
+import "../platform/bondage/currentCost/CurrentCostInterface.sol";
 
 contract MainMarket {
     using SafeMath for uint256;
 
-
+    //tokens represents dots bonded
     struct MainMarketHolder{
         bool initialized;
-        uint256 tokensOwned;
+        uint256 tokens;
         uint256 zapBalance;
-        uint256 dotsBonded;
     }
 
     mapping (address => MainMarketHolder) public holders;
@@ -28,6 +28,7 @@ contract MainMarket {
     ZapCoordinatorInterface public coordinator;
     ZapToken public zapToken;
     MainMarketTokenInterface public mainMarketToken;
+    CurrentCostInterface public currentCost;
 
 
     bytes32 public endPoint = "Bond";
@@ -41,12 +42,14 @@ contract MainMarket {
         address mainMarketTokenAddress = coordinator.getContract("MAINMARKET_TOKEN");
         address registryAddress = coordinator.getContract("REGISTRY");
         address zapTokenAddress = coordinator.getContract("ZAP_TOKEN");
+        address currentCostAddress = coordinator.getContract("CURRENT_COST");
 
 
         mainMarketToken = MainMarketTokenInterface(mainMarketTokenAddress);
         bondage = BondageInterface(bondageAddress);
         zapToken = ZapToken(zapTokenAddress);
         registry = RegistryInterface(registryAddress);
+        currentCost = CurrentCostInterface(currentCostAddress);
 
 
         bytes32 title = "Main market";
@@ -60,9 +63,8 @@ contract MainMarket {
         MainMarketHolder storage holder = holders[msg.sender];
         if(!holder.initialized) {
             holder.initialized = true;
-            holder.tokensOwned = 0;
+            holder.tokens = 0;
             holder.zapBalance = 0;
-            holder.dotsBonded = 0;
         }
         return holder;
     }
@@ -87,7 +89,7 @@ contract MainMarket {
     function depositZap(uint256 amount) public hasZap(amount) hasApprovedZap(amount) returns (bool) {
         zapToken.transferFrom(msg.sender, address(this), amount);
         MainMarketHolder storage holder = getHolder(msg.sender);
-        holder.zapBalance = amount;
+        holder.zapBalance += amount;
         address bondageAddr = coordinator.getContract("BONDAGE");
         return zapToken.approve(bondageAddr, amount);
     }
@@ -96,23 +98,19 @@ contract MainMarket {
     //able to transfer tokens to User
     function bond(uint256 dots) external hasEnoughZapForDots(dots) returns(uint256) {
         MainMarketHolder storage holder = getHolder(msg.sender);
-        //delegateBond bonds on behalf of msg.sender
-        //but unbond doesn't. It assumes the contract is bonded
-        //There is no delegateUnbond function
         uint zapSpent = bondage.bond(address(this), endPoint, dots);
-        holder.zapBalance -= zapSpent;
-        //Problem is we bond the contract to itself, but msg.sender(user) should
-        //bond which is why getBoundDots will always return 0 for msg.sender(user)
-        holder.dotsBonded = bondage.getBoundDots(msg.sender, address(this), endPoint);
-        if(holder.dotsBonded > 0) holderAddresses.push(msg.sender);
         mainMarketToken.transfer(msg.sender, dots);
+        holder.zapBalance -= zapSpent;
+        holder.tokens += dots;
         return zapSpent;
     }
 
     //Exchange MMT token to unbond and collect zap from unbonded dots(i.e mmt tokens)
     function unbond(uint256 dots) external hasApprovedMMT(dots) {
-        mainMarketToken.transferFrom(msg.sender, address(this), dots);
+        MainMarketHolder storage holder = getHolder(msg.sender);
         uint netZap = bondage.unbond(address(this), endPoint, dots);
+        mainMarketToken.transferFrom(msg.sender, address(this), dots);
+        holder.tokens -= dots;
         zapToken.transfer(msg.sender, netZap);
     }
 
@@ -145,6 +143,7 @@ contract MainMarket {
             uint256 weiAmount = equity * fee / 100;
             zapToken.transferFrom(msg.sender, holderAddresses[i], weiAmount);
         }
+        zapToken.transferFrom(amount, msg.sender);
         return fee;
     }
 
@@ -157,9 +156,9 @@ contract MainMarket {
     //Requires user to have enough zap to cover the cost of dots
     modifier hasEnoughZapForDots(uint256 dots) {
         uint256 zapBalance = zapToken.balanceOf(msg.sender);
-        uint256 issued = getDotsIssued(address(this), endPoint);
-        require(issued + numDots <= bondage.dotLimit(address(this), endPoint), "Error: Dot limit exceeded");
-        uint256 numZapForDots = currentCost._costOfNDots(address(this), endPoint, issued + 1, numDots - 1);
+        uint256 issued = bondage.getDotsIssued(address(this), endPoint);
+        require(issued + dots <= bondage.dotLimit(address(this), endPoint), "Error: Dot limit exceeded");
+        uint256 numZapForDots = currentCost._costOfNDots(address(this), endPoint, issued + 1, dots - 1);
         require (zapBalance >= numZapForDots, "Not enough Zap to buy dots");
         _;
     }
