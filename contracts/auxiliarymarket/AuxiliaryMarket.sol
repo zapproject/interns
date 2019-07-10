@@ -29,7 +29,7 @@ contract AuxiliaryMarket is Helper{
     32138759426588000256, 35352635369246801920, 38566511311905603584, 41780387254564397056, 44994263197223198720, 48208139139882000384, 51422015082540802048];
 
     // Price of $0.01 USD
-    uint zap = 28449300676025; //wei in 1 zap
+    uint zapInWei = 28449300676025;
     uint weiZapInZap = 10**18;
     uint weiZapInWei = weiZapInZap.div(zap); // amount of weiZap in one wei
 
@@ -40,15 +40,14 @@ contract AuxiliaryMarket is Helper{
     struct AuxMarketHolder{
         uint256 avgPrice;
         uint256 subTokensOwned;
-
     }
 
     //Mapping of holders
     mapping (address => AuxMarketHolder) holders;
 
-        //@_quantity is auxwei
+    //@_quantity is auxwei
     // Transfer zap from holder to market
-    function buyAuxiliaryToken(uint256 _quantity) public payable {
+    function buy(uint256 _quantity) public payable {
         // //TODO: Exchange AuxMarketToken for Zap
 
         // get current price in wei
@@ -76,7 +75,7 @@ contract AuxiliaryMarket is Helper{
         // Map holder msg.sender to key: value being holder struct
     }
 
-    function sellAuxiliaryToken(uint256 _quantity) public payable {
+    function sell(uint256 _quantity) public payable {
         // Sends Zap to Main Market when asset is sold at loss
         uint256 assetPrice = getCurrentPrice();
         // function sendToMainMarket() private {}
@@ -89,6 +88,7 @@ contract AuxiliaryMarket is Helper{
         uint256 num = 16;
         return assetPrices[random() % num];
     }
+
     // Grabs User's current balance of SubTokens
     function getBalance(address _address) public view returns (uint256) {
         return zapToken.balanceOf(_address);
@@ -98,10 +98,9 @@ contract AuxiliaryMarket is Helper{
         zapToken.allocate(address(this), amount);
     }
 
-    function testZapBalance() public view returns (uint256) {
-        return zapToken.balanceOf(address(this));
+    function getAMTBalance(address _owner) public returns(uint256) {
+        return auxiliaryMarketToken.balanceOf(_owner);
     }
-
 
     function test() public returns(uint256){
        return holders[msg.sender].avgPrice;
