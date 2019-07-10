@@ -17,9 +17,6 @@ module.exports = async function(deployer) {
 	await coordinator.addImmutableContract('MAINMARKET', mm.address);
 	await coordinator.addImmutableContract('AUXMARKET', aux.address);
 
-	var zapInWei = await mm.zapInWei();
-  var mmtDecimals = await mmt.decimals();
-
 	//Mint initial 100 million MMT Tokens for Main Market to disperse to users who bond
   var mintAmount = 100000000;
   //turn to 18 decimal precision
@@ -28,7 +25,7 @@ module.exports = async function(deployer) {
 	await mmt.mint(mm.address, mmtWei);
 
 	var allocate = 500;
-  var allocateInWeiMMT =  web3.utils.toWei(allocate.toString(), 'ether');
+  var allocateInWeiMMT = web3.utils.toWei(allocate.toString(), 'ether');
 
 	//Allocate 500 Zap to user for testing purposes locally
 	await mm.allocateZap(allocateInWeiMMT);
