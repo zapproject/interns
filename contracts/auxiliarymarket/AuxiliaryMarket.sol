@@ -21,7 +21,6 @@ contract AuxiliaryMarket is Helper{
         zapToken = ZapToken(coordinator.getContract("ZAP_TOKEN"));
     }
 
-
     uint[] public assetPrices = [3213875942658800128, 6427751885317600256, 9641627827976400896, 12855503770635200512, 16069379713294000128, 19283255655952801792, 22497131598611599360, 25711007541270401024, 28924883483929198592,
    32138759426588000256, 35352635369246801920, 38566511311905603584, 41780387254564397056, 44994263197223198720, 48208139139882000384, 51422015082540802048];
 
@@ -36,7 +35,6 @@ contract AuxiliaryMarket is Helper{
     struct AuxMarketHolder{
         uint256 avgPrice;
         uint256 subTokensOwned;
-
     }
 
     //Mapping of holders
@@ -78,6 +76,7 @@ contract AuxiliaryMarket is Helper{
         uint256 num = 16;
         return assetPrices[random() % num];
     }
+
     // Grabs User's current balance of SubTokens
     function getBalance(address _address) public view returns (uint256) {
         return zapToken.balanceOf(_address);
@@ -90,7 +89,6 @@ contract AuxiliaryMarket is Helper{
     function getAMTBalance(address _owner) public returns(uint256) {
         return auxiliaryMarketToken.balanceOf(_owner);
     }
-
 
     function test() public returns(uint256){
        return holders[msg.sender].avgPrice;
