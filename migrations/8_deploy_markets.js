@@ -26,6 +26,7 @@ module.exports = async function(deployer) {
 
   //Mint initial 100 million MMT Tokens for Main Market to disperse to users who bond
   let mintAmount = 100000000;
+
   //turn to 18 decimal precision
   let mmtWei = web3.utils.toWei(mintAmount.toString(), 'ether');
   let amtWei = web3.utils.toWei(mintAmount.toString(), 'ether');
