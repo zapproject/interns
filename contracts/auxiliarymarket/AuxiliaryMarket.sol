@@ -27,7 +27,7 @@ contract AuxiliaryMarket is Helper{
 
     // Price of $0.01 USD
     uint zapInWei = 28449300676025;
-    uint weiInWeiZap = (10**18).div(zapInWei);
+    uint weiInWeiZap = (10**18)/zapInWei;
 
     function random() public returns (uint) {
         return uint(keccak256(abi.encodePacked(block.difficulty, now, assetPrices)));
@@ -51,11 +51,11 @@ contract AuxiliaryMarket is Helper{
         uint256 _totalWeiZap = _currentAssetPrice * _quantity;
 
         // check how much zap received // transfer from balalnce of(). use zap coordinator to get address of zap token contract
-        require(getBalance(address(this)) * zap > _totalWei, "Not enough Zap in Wallet");
+        require(getBalance(address(this)) * weiInWeiZap > _totalWeiZap, "Not enough Zap in Wallet");
         // transfer equivalent amount in subtoken
         //zapToken.transferFrom(msg.sender, address(this));
         // holder struct with price bought in and amount of subtokens
-        uint256 avgPrice = (_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned).div(
+        uint256 avgPrice = (_totalWeiZap + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned).div(
             (_quantity + holders[msg.sender].subTokensOwned));
 
         uint256 quantity = holders[msg.sender].subTokensOwned + _quantity;
