@@ -88,7 +88,7 @@ contract AuxiliaryMarketToken is AuxiliaryMarketTokenInterface {
     constructor() public {
         name = "AuxiliaryMarketToken";
         symbol = "AMT";
-        totalSupply_ = 100000000; // Keep note of total supply
+        totalSupply_ = 0; // Keep note of total supply
         balances[address(this)] = totalSupply_;
     }
 

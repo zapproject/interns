@@ -21,18 +21,31 @@ module.exports = async function(deployer) {
   await coordinator.addImmutableContract('MAINMARKET', mm.address);
   await coordinator.addImmutableContract('AUXMARKET', am.address);
 
-  var zapInWei = await mm.zapInWei();
+  let zapInWei = await mm.zapInWei();
+  let mmtDecimals = await mmt.decimals();
 
   //Mint initial 100 million MMT Tokens for Main Market to disperse to users who bond
-  await mmt.mint(mm.address, '10000000000000000');
-  await amt.mint(am.address, '10000000000000000');
+  let mintAmount = 100000000;
+  //turn to 18 decimal precision
+  let mmtWei = web3.utils.toWei(mintAmount.toString(), 'ether');
+  let amtWei = web3.utils.toWei(mintAmount.toString(), 'ether');
+  //mmtWei is used for more precise transactions.
+  await mmt.mint(mm.address, mmtWei);
+  await amt.mint(am.address, amtWei);
 
-  var allocate = 500 * zapInWei.toNumber();
+  let allocate = 500;
+  let allocateInWeiMMT = web3.utils.toWei(allocate.toString(), 'ether');
+  let allocateInWeiAMT = web3.utils.toWei(allocate.toString(), 'ether');
 
   //Allocate 500 Zap to user for testing purposes locally
-  await mm.allocateZap(allocate + '');
+  await mm.allocateZap(allocateInWeiMMT);
+  await am.allocateZap(allocateInWeiAMT);
 
-  var approved = 100 * zapInWei.toNumber();
+  //100 zap
+  let approved = 100;
+  let approveWeiZap = web3.utils.toWei(approved.toString(), 'ether');
+
   //Approve MainMarket an allowance of 100 Zap to use on behalf of msg.sender(User)
-  await zapToken.approve(mm.address, approved);
+  await zapToken.approve(mm.address, approveWeiZap);
+  await zapToken.approve(am.address, approveWeiZap);
 };
