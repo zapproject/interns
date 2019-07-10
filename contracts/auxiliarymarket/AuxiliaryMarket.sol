@@ -56,11 +56,9 @@ contract AuxiliaryMarket is Helper{
         // transfer equivalent amount in subtoken
         //zapToken.transferFrom(msg.sender, address(this));
         // holder struct with price bought in and amount of subtokens
-        uint256 avgPrice = 0;
-        
-        (_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned).div(
-            (_quantity + holders[msg.sender].subTokensOwned)
-        );
+        uint256 avgPrice = (_totalWei + holders[msg.sender].avgPrice * holders[msg.sender].subTokensOwned).div(
+            (_quantity + holders[msg.sender].subTokensOwned));
+
         uint256 quantity = holders[msg.sender].subTokensOwned + _quantity;
 
         AuxMarketHolder memory holder = AuxMarketHolder(avgPrice, quantity);
