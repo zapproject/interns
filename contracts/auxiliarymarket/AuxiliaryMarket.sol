@@ -27,7 +27,6 @@ contract AuxiliaryMarket is Helper{
 
     // Price of $0.01 USD
     uint zapInWei = 28449300676025;
-
     uint weiInWeiZap = (10**18).div(zapInWei);
 
     function random() public returns (uint) {
