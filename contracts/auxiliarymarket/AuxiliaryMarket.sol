@@ -30,8 +30,10 @@ contract AuxiliaryMarket is Helper{
 
     // Price of $0.01 USD
     uint zapInWei = 28449300676025;
-    uint weiZapInZap = 10**18;
+    uint precision = 10**18;
+    uint weiZapInZap = precision;
     uint weiZapInWei = weiZapInZap.div(zapInWei); // amount of weiZap in one wei
+    uint prec = 10**18;
 
     function random() public returns (uint) {
         return uint(keccak256(abi.encodePacked(block.difficulty, now, assetPrices)));
@@ -50,7 +52,7 @@ contract AuxiliaryMarket is Helper{
 
     function buy(uint256 _quantity) public payable returns(uint256){
         // get current price in wei
-        uint256 totalWeiCost = getCurrentPrice()/100000000000000000 * _quantity;
+        uint256 totalWeiCost = getCurrentPrice()/precision * _quantity;
 
         //turn price from wei to weiZap
         uint256 totalWeiZap = totalWeiCost * weiZapInWei;
