@@ -31,7 +31,7 @@ contract AuxiliaryMarket is Helper{
     // Price of $0.01 USD
     uint zapInWei = 28449300676025;
     uint weiZapInZap = 10**18;
-    uint weiZapInWei = weiZapInZap.div(zap); // amount of weiZap in one wei
+    uint weiZapInWei = weiZapInZap.div(zapInWei); // amount of weiZap in one wei
 
     function random() public returns (uint) {
         return uint(keccak256(abi.encodePacked(block.difficulty, now, assetPrices)));
@@ -45,13 +45,11 @@ contract AuxiliaryMarket is Helper{
     //Mapping of holders
     mapping (address => AuxMarketHolder) holders;
 
-    //@_quantity is auxwei
+      //@_quantity is auxwei
     // Transfer zap from holder to market
-    function buy(uint256 _quantity) public payable {
-        // //TODO: Exchange AuxMarketToken for Zap
-
+    function buy(uint256 _quantity) public payable returns(uint256){
         // get current price in wei
-        uint256 totalWeiCost = getCurrentPrice() * _quantity;
+        uint256 totalWeiCost = getCurrentPrice()/100000000000000000 * _quantity;
 
         //turn price from wei to weiZap
         uint256 totalWeiZap = totalWeiCost * weiZapInWei;
@@ -72,6 +70,7 @@ contract AuxiliaryMarket is Helper{
         holder.avgPrice = avgPrice;
         holder.subTokensOwned = newTotalTokens;
 
+        return totalWeiZap;
         // Map holder msg.sender to key: value being holder struct
     }
 
@@ -95,7 +94,7 @@ contract AuxiliaryMarket is Helper{
     }
 
     function allocateZap(uint256 amount) public {
-        zapToken.allocate(address(this), amount);
+        zapToken.allocate(msg.sender, amount);
     }
 
     function getAMTBalance(address _owner) public returns(uint256) {
