@@ -21,12 +21,13 @@ module.exports = async function(deployer) {
   await coordinator.addImmutableContract('MAINMARKET', mm.address);
   await coordinator.addImmutableContract('AUXMARKET', am.address);
 
-	//Mint initial 100 million MMT Tokens for Main Market to disperse to users who bond
+  //Mint initial 100 million MMT Tokens for Main Market to disperse to users who bond
   var mintAmount = 100000000;
 
   //turn to 18 decimal precision
   let mmtWei = web3.utils.toWei(mintAmount.toString(), 'ether');
   let amtWei = web3.utils.toWei(mintAmount.toString(), 'ether');
+
   //mmtWei is used for more precise transactions.
   await mmt.mint(mm.address, mmtWei);
   await amt.mint(am.address, amtWei);
