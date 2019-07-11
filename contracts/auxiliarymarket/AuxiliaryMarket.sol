@@ -5,22 +5,25 @@ import "./AuxiliaryMarketInterface.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
 import "./AuxiliaryMarketTokenInterface.sol";
-
+import "./MainMarket.sol";
+    
 contract AuxiliaryMarket{
     using SafeMath for uint256;
 
     ZapCoordinatorInterface public coordinator;
     ZapToken public zapToken;
     AuxiliaryMarketTokenInterface public auxiliaryMarketToken;
-    uint256 public auxTokenPrice; //in wei
+    MainMarket public mainMaket;
+    // uint256 public auxTokenPrice; //in wei might not need
 
     constructor(address _zapCoor) public {
         coordinator = ZapCoordinatorInterface(_zapCoor);
-        address mainMarketAddr = coordinator.getContract("MAINMARKET");
         auxiliaryMarketToken = AuxiliaryMarketTokenInterface(coordinator.getContract("AUXILIARYMARKET_TOKEN"));
         zapToken = ZapToken(coordinator.getContract("ZAP_TOKEN"));
-        // uint256 totalTokens = auxiliaryMarketToken.balanceOf(address(this));
-        // auxTokenPrice = getCurrentPrice().div(totalTokens) * zap;
+
+        //import main market
+        address mainMarketAddr = coordinator.getContract("MAINMARKET");
+        mainMarket = MainMarket(mainMarketAddr);
     }
 
     //asset prices in wei
@@ -79,11 +82,22 @@ contract AuxiliaryMarket{
     }
 
     function sell(uint256 _quantity) public payable {
-        // Sends Zap to Main Market when asset is sold at loss
-        // uint256 assetPrice = getCurrentPrice();
-        // function sendToMainMarket() private {}
-        // Sends Zap to Main Market when asset is sold at gain
-        // function getFromMainMarket() private {}
+
+        require (auxiliaryMarketToken.balanceOf(msg.sender) > _quantity);
+        
+        //get sell position
+        uint256 weiPrice = getCurrentPrice()/precision * _quantity;
+        //turn to weizap
+        uint256 weiZapPrice = weiPrice * weiInWeiZap
+
+        require (weiZapPrice < zapToken.balanceOf(msg.sender));
+        
+        //send aux from msg.sender to this contrac
+        auxiliaryMarketToken.transfer(address(this), _quantity);
+
+        //send the zap from main market to the buyer
+        withdraw(weiZapPrice, msg.sender);
+
     }
 
     // Grabs current price of asset
