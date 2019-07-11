@@ -42,10 +42,11 @@ module.exports = async function(deployer) {
 	//Approve MainMarket an allowance of 100 Zap to use on behalf of msg.sender(User)
 	await zapToken.approve(mm.address, approveWeiZap);
 	await mm.depositZap(approveWeiZap);
-
+	await mm.bond(10);
 
 	//Setting up second account with zap and approving zap to withdraw
 	await mm.allocateZap(allocateInWeiMMT, {from: secondAccount});
 	await zapToken.approve(mm.address, approveWeiZap, {from: secondAccount});
+	await mm.bond(10, {from: secondAccount});
 
 };

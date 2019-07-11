@@ -5,6 +5,11 @@ import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
 import "./MainMarketTokenInterface.sol";
 import "../platform/bondage/currentCost/CurrentCostInterface.sol";
+import "../lib/ownership/ZapCoordinator.sol";
+import "../platform/registry/Registry.sol";
+import "../platform/bondage/Bondage.sol";
+import "./MainMarketToken.sol";
+import "../platform/bondage/currentCost/CurrentCost.sol";
 
 contract MainMarket {
     using SafeMath for uint256;
@@ -14,29 +19,29 @@ contract MainMarket {
         bool initialized;
         uint256 tokens;
         uint256 zapBalance;
+        int256 index;
     }
 
     mapping (address => MainMarketHolder) public holders;
     address[] public holderAddresses;
+    uint public holderAddressesLength = 0;
     uint256 public zapInWei = 28449300676025;
 
 
-    RegistryInterface public registry;
-    BondageInterface public bondage;
-    ZapCoordinatorInterface public coordinator;
+    Registry public registry;
+    Bondage public bondage;
+    ZapCoordinator public coordinator;
     ZapToken public zapToken;
-    MainMarketTokenInterface public mainMarketToken;
-    CurrentCostInterface public currentCost;
+    MainMarketToken public mainMarketToken;
+    CurrentCost public currentCost;
 
 
     bytes32 public endPoint = "Bond";
     int256[] curve1 = [1,1,1000];
-
-    uint256 weiInWeiZap = (10**18/zapInWei);
     
     constructor(address _zapCoor) public {
 
-        coordinator = ZapCoordinatorInterface(_zapCoor);
+        coordinator = ZapCoordinator(_zapCoor);
 
         address bondageAddress = coordinator.getContract("BONDAGE");
         address mainMarketTokenAddress = coordinator.getContract("MAINMARKET_TOKEN");
@@ -45,11 +50,11 @@ contract MainMarket {
         address currentCostAddress = coordinator.getContract("CURRENT_COST");
 
 
-        mainMarketToken = MainMarketTokenInterface(mainMarketTokenAddress);
-        bondage = BondageInterface(bondageAddress);
+        mainMarketToken = MainMarketToken(mainMarketTokenAddress);
+        bondage = Bondage(bondageAddress);
         zapToken = ZapToken(zapTokenAddress);
-        registry = RegistryInterface(registryAddress);
-        currentCost = CurrentCostInterface(currentCostAddress);
+        registry = Registry(registryAddress);
+        currentCost = CurrentCost(currentCostAddress);
 
 
         bytes32 title = "Main market";
@@ -65,6 +70,7 @@ contract MainMarket {
             holder.initialized = true;
             holder.tokens = 0;
             holder.zapBalance = 0;
+            holder.index = -1;
         }
         return holder;
     }
@@ -74,11 +80,21 @@ contract MainMarket {
     //Decimal Precision may need to be increased in the future because
     //a holder's stake can be less than 1%, even .0003933% if enough
     //users are bonding to it
-    function getEquityStake (address holder) public returns (uint256) {
+    function getEquityStake(address holder) public returns (uint256) {
         uint256 totalBonded = bondage.getDotsIssued(address(this), endPoint);
         uint256 holderTotal = mainMarketToken.balanceOf(holder);
         uint256 equityStake = holderTotal*100 / totalBonded;
         return equityStake;
+    }
+
+    //This works for any precision
+    //Can be used in the future to increase equity precision
+    function percent(uint numerator, uint denominator, uint precision) public returns(uint quotient) {
+        // caution, check safe-to-multiply here
+        uint _numerator  = numerator * 10 ** (precision+1);
+        // with rounding of last digit
+        uint _quotient =  ((_numerator / denominator) + 5) / 10;
+        return ( _quotient);
     }
 
     //Deposits Zap into Main Market Token Contract and approves Bondage an allowance of
@@ -100,8 +116,48 @@ contract MainMarket {
         mainMarketToken.transfer(msg.sender, dots);
         holder.zapBalance -= zapSpent;
         holder.tokens += dots;
-        holderAddresses.push(msg.sender);
+        if(holder.index == -1) {
+            holderAddresses.push(msg.sender);
+            holderAddressesLength += 1;
+            //holder.index = holderAddressesLength - 1;
+        }
         return zapSpent;
+    }
+
+
+//    function deletefromHolderAddresses(address addr) public {
+//        if(holderAddressesLength == 1) {
+//            holderAddressesLength--;
+//            holderAddresses.length--;
+//            return;
+//        }
+//
+//        MainMarketHolder storage holder = getHolder(addr);
+//        require (holder.index != -1, "Holder address is not inside holderAddresses Array");
+//        MainMarketHolder storage lastHolder = getHolder(holderAddresses[holderAddressesLength-1]);
+//        //Place lastHolder in new deleted holder's index position
+//        holderAddresses[holder.index] = holderAddresses[holderAddressesLength-1];
+//        //Update lastHolders new index
+//        lastHolder.index = holder.index;
+//
+//        holderAddressesLength--;
+//        holderAddresses.length--;
+//    }
+
+    function remove(address addr) public returns(bool) {
+        uint index;
+        for (uint i = 0; i < holderAddressesLength; i++){
+            if(holderAddresses[i] == addr) index = i;
+        }
+
+        if(index > holderAddressesLength) return false;
+
+        for (uint i = index; i < holderAddressesLength-1; i++){
+            holderAddresses[i] = holderAddresses[i+1];
+        }
+        holderAddresses.length--;
+        holderAddressesLength--;
+        return true;
     }
 
     //Exchange MMT token to unbond and collect zap from unbonded dots(i.e mmt tokens)
@@ -111,6 +167,9 @@ contract MainMarket {
         mainMarketToken.transferFrom(msg.sender, address(this), dots);
         holder.tokens -= dots;
         zapToken.transfer(msg.sender, netZap);
+        if(holder.tokens  < 1) {
+            remove(msg.sender);
+        }
     }
 
     //For local testing purposes
@@ -129,8 +188,6 @@ contract MainMarket {
         return mainMarketToken.balanceOf(_owner);
     }
 
-    event Fee(uint256 fee);
-
     //Once we get query functioning, this will get the Zap Price from OffChain Oracle
     //function getZapPrice() public view {
     //}
@@ -138,18 +195,16 @@ contract MainMarket {
     //Withdraw Zap from gains/losses from Auxiliary Market and disperse 5% of
     //the fee based on the percentage of bonded stake on the Main Market
     function withdraw(uint256 amount, address addr) external returns(uint256) {
-        uint256 fee = (amount.mul(5)).div(100) * weiInWeiZap;
-        emit Fee(fee);
-        for (uint i = 0; i < holderAddresses.length; i++) {
+        uint256 fee = (amount.mul(5)).div(100);
+        for (uint i = 0; i < holderAddressesLength; i++) {
             uint256 equity = getEquityStake(holderAddresses[i]);
-            uint256 weiZapAmount = equity.mul((fee.div(100)));
-            zapToken.transferFrom(addr, holderAddresses[i], weiZapAmount);
+            uint256 equityAmount = equity.mul((fee.div(100)));
+            zapToken.transfer(holderAddresses[i], equityAmount);
         }
         uint256 netAmount = amount - fee;
         zapToken.transfer(addr, netAmount);
         return fee;
     }
-
 
     //Destroys the contract when there is no more Zap
     //and distributes ratio
