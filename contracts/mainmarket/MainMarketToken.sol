@@ -1,12 +1,9 @@
 pragma solidity ^0.5.8;
 
 import "./MainMarketTokenInterface.sol";
-
 import "../helpers/SafeMath.sol";
 
-
 // File: contracts/lib/math/SafeMath.sol
-
 // File: contracts/token/Token.sol
 
 contract MainMarketToken is MainMarketTokenInterface {

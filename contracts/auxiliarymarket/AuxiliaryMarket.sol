@@ -68,7 +68,6 @@ contract AuxiliaryMarket {
 
         AuxMarketHolder memory holder = holders[msg.sender];
         uint256 newTotalTokens = holder.subTokensOwned.add(_quantity);
-
         // holder struct with price bought in and amount of subtokens
         uint256 avgPrice = (totalWeiCost + holder.avgPrice * holder.subTokensOwned).div(newTotalTokens);
 
