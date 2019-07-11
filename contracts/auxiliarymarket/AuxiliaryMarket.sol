@@ -54,7 +54,7 @@ contract AuxiliaryMarket {
 
     function buy(uint256 _quantity) public payable returns(uint256){
         // get current price in wei
-        uint256 totalWeiCost = getCurrentPrice()/precision * _quantity;
+        uint256 totalWeiCost = 51422015082540802048/precision * _quantity;
 
         //turn price from wei to weiZap
         uint256 totalWeiZap = totalWeiCost * weiInWeiZap;
@@ -78,15 +78,20 @@ contract AuxiliaryMarket {
         // Map holder msg.sender to key: value being holder struct
     }
 
-    function sell(uint256 _quantity) public payable {
-        // Sends Zap to Main Market when asset is sold at loss
-        uint256 assetPrice = getCurrentPrice();
-        // function sendToMainMarket() private {}
-        // Sends Zap to Main Market when asset is sold at gain
-        // function getFromMainMarket() private {}
-        // uint256 fee = (amount.mul(5).div(100) * weiInZap;
-        //uint256 netAmount = amount - fee;
-        // zapToken.transferFrom(addr, netAmount);
+    function sell(uint256 _quantity) public hasApprovedAMT(_quantity) {
+        address mainMarketAddr = coordinator.getContract("MAINMARKET");
+        require(_quantity < auxiliaryMarketToken.balanceOf(msg.sender), "You do not own enough AMT");
+
+        uint256 totalWeiCost = 3213875942658800128/precision * _quantity;
+        uint256 totalWeiZap = totalWeiCost * weiInWeiZap;
+
+
+
+        require(getBalance(mainMarketAddr) > totalWeiZap, "Not enough Zap in Wallet");
+
+        mainMarket.withdraw(totalWeiZap, msg.sender);
+
+        auxiliaryMarketToken.transferFrom(msg.sender, address(this), _quantity);
     }
 
     // Grabs current price of asset
@@ -106,6 +111,13 @@ contract AuxiliaryMarket {
 
     function getAMTBalance(address _owner) public view returns(uint256) {
         return auxiliaryMarketToken.balanceOf(_owner);
+    }
+
+        //Requires User to approve the Main Market Contract an allowance to spend mmt on their behalf
+    modifier hasApprovedAMT(uint256 amount) {
+        uint256 allowance = auxiliaryMarketToken.allowance(msg.sender, address(this));
+        require (allowance >= amount, "Not enough AMT allowance to be spent by Aux Contract");
+        _;
     }
 
     // function test() public returns(uint256){
