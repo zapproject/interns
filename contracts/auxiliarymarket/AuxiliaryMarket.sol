@@ -47,6 +47,7 @@ contract AuxiliaryMarket is Helper{
 
       //@_quantity is auxwei
     // Transfer zap from holder to market
+
     function buy(uint256 _quantity) public payable returns(uint256){
         // get current price in wei
         uint256 totalWeiCost = getCurrentPrice()/100000000000000000 * _quantity;
