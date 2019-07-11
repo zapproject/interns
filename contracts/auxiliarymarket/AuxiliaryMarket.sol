@@ -2,12 +2,11 @@ pragma solidity ^0.5.8;
 
 import "../mainmarket/MainMarket.sol";
 import "./AuxiliaryMarketInterface.sol";
-import "./Helper.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
 import "./AuxiliaryMarketTokenInterface.sol";
 
-contract AuxiliaryMarket is Helper{
+contract AuxiliaryMarket{
     using SafeMath for uint256;
 
     ZapCoordinatorInterface public coordinator;
@@ -49,7 +48,7 @@ contract AuxiliaryMarket is Helper{
         uint256 _totalWeiZap = _currentAssetPrice * _quantity;
 
         // check how much zap received // transfer from balalnce of(). use zap coordinator to get address of zap token contract
-        require(getBalance(address(this)) * weiInWeiZap > _totalWeiZap, "Not enough Zap in Wallet");
+        require(getBalance(msg.sender) * weiInWeiZap > _totalWeiZap, "Not enough Zap in Wallet");
         // transfer equivalent amount in subtoken
         // zapToken.transferFrom(msg.sender, address(this), _totalWei);
         // holder struct with price bought in and amount of subtokens
@@ -83,7 +82,7 @@ contract AuxiliaryMarket is Helper{
     }
 
     function allocateZap(uint256 amount) public {
-        zapToken.allocate(address(this), amount);
+        zapToken.allocate(msg.sender, amount);
     }
 
     function getAMTBalance(address _owner) public returns(uint256) {
@@ -92,5 +91,34 @@ contract AuxiliaryMarket is Helper{
 
     function test() public returns(uint256){
        return holders[msg.sender].avgPrice;
+    }
+
+
+    /**
+     * These functions are to be used on querying oracles
+     */
+    // https://ethereum.stackexchange.com/questions/884/how-to-convert-an-address-to-bytes-in-solidity
+    function toBytes(address x) public pure returns (bytes b) {
+        b = new bytes(20);
+        for (uint i = 0; i < 20; i++)
+            b[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
+    }
+
+    //https://ethereum.stackexchange.com/questions/2519/how-to-convert-a-bytes32-to-string
+    function bytes32ToString(bytes32 x) public pure returns (string) {
+        bytes memory bytesString = new bytes(32);
+        bytesString = abi.encodePacked(x);
+        return string(bytesString);
+    }
+
+    //https://ethereum.stackexchange.com/questions/15350/how-to-convert-an-bytes-to-address-in-solidity
+    function bytesToAddr (bytes b) public pure returns (address) {
+        uint result = 0;
+        for (uint i = b.length-1; i+1 > 0; i--) {
+            uint c = uint(b[i]);
+            uint to_inc = c * ( 16 ** ((b.length - i-1) * 2));
+            result += to_inc;
+        }
+        return address(result);
     }
 }
