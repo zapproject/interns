@@ -31,16 +31,15 @@ module.exports = async function(deployer) {
   await mmt.mint(mm.address, mmtWei);
   await amt.mint(am.address, amtWei);
 
-  let allocate = 500;
+  let allocate = 2000000;
   let allocateInWeiMMT = web3.utils.toWei(allocate.toString(), 'ether');
   let allocateInWeiAMT = web3.utils.toWei(allocate.toString(), 'ether');
 
   //Allocate 500 Zap to user for testing purposes locally
   await mm.allocateZap(allocateInWeiMMT);
-  await am.allocateZap(allocateInWeiAMT);
 
   //100 zap
-  let approved = 100;
+  let approved = 2000000;
   let approveWeiZap = web3.utils.toWei(approved.toString(), 'ether');
 
   //Approve MainMarket an allowance of 100 Zap to use on behalf of msg.sender(User)
