@@ -53,7 +53,7 @@ contract AuxiliaryMarket{
 
     function buy(uint256 _quantity) public payable returns(uint256){
         // get current price in wei
-        uint256 totalWeiCost = getCurrentPrice()/1000000000000000000 * _quantity;
+        uint256 totalWeiCost = getCurrentPrice()/precision * _quantity;
 
         //turn price from wei to weiZap
         uint256 totalWeiZap = totalWeiCost * weiInWeiZap;
