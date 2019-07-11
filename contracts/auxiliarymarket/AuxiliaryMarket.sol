@@ -29,7 +29,8 @@ contract AuxiliaryMarket is Helper{
 
     // Price of $0.01 USD
     uint zapInWei = 28449300676025;
-    uint weiInWeiZap = (10**18)/zapInWei;
+    uint256 precision = 10**18;
+    uint weiInWeiZap = (precision).div(zapInWei); //(10**18)/zapInWei;
 
     function random() public returns (uint) {
         return uint(keccak256(abi.encodePacked(block.difficulty, now, assetPrices)));
@@ -46,13 +47,14 @@ contract AuxiliaryMarket is Helper{
     // Transfer zap from holder to market
     function buy(uint256 _quantity) public payable {
         // //TODO: Exchange AuxMarketToken for Zap
+        // user approves aux market, aux market uses transferFrom to send zap from User to MainMarket address.
 
         // get current price
         uint256 _currentAssetPrice = getCurrentPrice() * weiInWeiZap;
         uint256 _totalWeiZap = _currentAssetPrice * _quantity;
 
         // check how much zap received // transfer from balalnce of(). use zap coordinator to get address of zap token contract
-        require(getBalance(address(this)) * weiInWeiZap > _totalWeiZap, "Not enough Zap in Wallet");
+        require(getBalance(msg.sender) * weiInWeiZap > _totalWeiZap, "Not enough Zap in Wallet");
         // transfer equivalent amount in subtoken
         //zapToken.transferFrom(msg.sender, address(this));
         // holder struct with price bought in and amount of subtokens
@@ -72,6 +74,9 @@ contract AuxiliaryMarket is Helper{
         // function sendToMainMarket() private {}
         // Sends Zap to Main Market when asset is sold at gain
         // function getFromMainMarket() private {}
+        // uint256 fee = (amount.mul(5).div(100) * weiInZap;
+        //uint256 netAmount = amount - fee;
+        // zapToken.transferFrom(addr, netAmount);
     }
 
     // Grabs current price of asset
@@ -86,7 +91,7 @@ contract AuxiliaryMarket is Helper{
     }
 
     function allocateZap(uint256 amount) public {
-        zapToken.allocate(address(this), amount);
+        zapToken.allocate(msg.sender, amount);
     }
 
     function getAMTBalance(address _owner) public returns(uint256) {

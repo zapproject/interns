@@ -34,7 +34,7 @@ module.exports = async function(deployer) {
   await mmt.mint(mm.address, mmtWei);
   await amt.mint(am.address, amtWei);
 
-  let allocate = 500;
+  let allocate = 2000000;
   let allocateInWeiMMT = web3.utils.toWei(allocate.toString(), 'ether');
   let allocateInWeiAMT = web3.utils.toWei(allocate.toString(), 'ether');
 
