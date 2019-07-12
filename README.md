@@ -1,8 +1,7 @@
 # Summer19 - Asset Market
 
 ## Purpose
-To create a decentralized Asset Market where users are able to use Zap to invest in any asset through the help of oracles. This platform consists
-of two parts : The Main Market and the Auxiliary Market(s)
+To create a decentralized Asset Market where users are able to use Zap to invest in any asset through the help of oracles. This platform consists of two parts : The Main Market and the Auxiliary Market(s)
 
 - Main Market
     + Takes the other side of all investments
@@ -30,6 +29,7 @@ of two parts : The Main Market and the Auxiliary Market(s)
 `zapBalance` uint256 - tracker of how much Zap is in the pool (in weiZap)
 
 - Constructor
+
 Initializes the following
 `bondage` - bonadge contract
 `zapToken` - zapToken contract
@@ -38,6 +38,7 @@ Initializes the following
 
 - getHolder()
     + gets existing holder and creates one if one doesn't exist
+
 Parameters:
 `addr` - address
 Returns:
@@ -45,6 +46,7 @@ Returns:
 
 - getEquityStake()
     + Gets user's equity stake based on total Zap in Contract and holder's zap balance in the Main Market Contract
+
 Parameters:
 `holder` - address
 Returns:
@@ -52,6 +54,7 @@ Returns:
 
 - percent()
     + Used to increase equity precision
+
 Parameters:
 `numerator` - uint256
 `denominator` - uint256
@@ -61,6 +64,7 @@ Returns:
 
 - depositZap()
     + Deposits Zap into Main Market Token Contract and approves Bondage
+
 Parameters:
 `amount` - uint256
 Returns:
@@ -68,6 +72,7 @@ Returns:
 
 - bond()
     + spends Zap to bond to the Main Market Curve and obtains MainMarketTokens
+
 Parameters:
 `dots` - uint256
 Returns:
@@ -75,11 +80,13 @@ Returns:
 
 - unbond()
     + exchanges MainMarketToken and unbonds dot from Main Market curve and transfers Zap back to user
+
 Parameters:
 `dots` - uint256
 
 - remove()
     + removes address from Main Market holders
+
 Parameters:
 `addr` - address
 Returns:
@@ -87,6 +94,7 @@ Returns:
 
 - withdraw()
     + Withdraw Zap from gains/losses from Auxiliary Market and disperse 5% of the fee based on the percentage of bonded stake on the Main Market
+
 Parameters:
 `amount` - uint256
 `addr` - address
@@ -101,11 +109,14 @@ Returns:
 
 
 ## Functinality of Auxiliary Market
-Initialized with a `AuxMarketHolder` struct
+Initialized with a `AuxMarketHolder` struct:
+
 `avgPrice` uint256 - average price tracker of all AuxiliaryMarketTokens user purchased
+
 `subTokensOwned` uint256 - tracker of how many Auxiliary asset tokens user has
 
 - Constructor
+
 Initializes the following:
 `coordinator` - Zap coordinator contract
 `mainMarket` - main market contract
@@ -117,29 +128,34 @@ Initializes the following:
 
 - buy()
     + purchases the auxiliary market token with zap for the cooresponding asset
+
 Parameters:
 `_quantity` - uint256
 
 - sell()
     + sells user's auxiliary market tokens for the asset and gets zap back
+
 Parameters:
 `_quantity` - uint256
 
 - getCurrentPrice()
     + **Suppose to query an oracle to obtain the asset's current price
 
-- getBalance()
+- getBalance
     + get's user's current Zap balance
+
 Parameters:
 `_address` - address
 
 - allocateZap()
     + allocates user's zap to spend
+
 Parameters:
 `amount` - uint256
 
 - getAMTBalance()
     + get's User's current AuxiliaryMarketToken balance (corresponding to the asset of the Auxiliary Market)
+
 Parameters:
 `_owner` - address
 
