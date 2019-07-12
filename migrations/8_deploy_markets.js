@@ -14,14 +14,18 @@ module.exports = async function(deployer) {
   const amt = await AuxiliaryMarketToken.deployed();
   await coordinator.addImmutableContract('MAINMARKET_TOKEN', mmt.address);
   await coordinator.addImmutableContract('AUXILIARYMARKET_TOKEN', amt.address);
-  await deployer.deploy(AuxiliaryMarket, ZapCoordinator.address);
   await deployer.deploy(MainMarket, ZapCoordinator.address);
   const mm = await MainMarket.deployed();
-  const am = await AuxiliaryMarket.deployed();
   await coordinator.addImmutableContract('MAINMARKET', mm.address);
+  await deployer.deploy(AuxiliaryMarket, ZapCoordinator.address);
+  const am = await AuxiliaryMarket.deployed();
   await coordinator.addImmutableContract('AUXMARKET', am.address);
 
-	//Mint initial 100 million MMT Tokens for Main Market to disperse to users who bond
+  var accounts = await web3.eth.getAccounts();
+  var secondAccount = accounts[1];
+  var thirdAccount = accounts[2];
+
+  //Mint initial 100 million MMT Tokens for Main Market to disperse to users who bond
   var mintAmount = 100000000;
 
   //turn to 18 decimal precision
@@ -33,16 +37,35 @@ module.exports = async function(deployer) {
 
   let allocate = 2000000;
   let allocateInWeiMMT = web3.utils.toWei(allocate.toString(), 'ether');
-  let allocateInWeiAMT = web3.utils.toWei(allocate.toString(), 'ether');
 
-  //Allocate 500 Zap to user for testing purposes locally
+  //Allocate Zap to user for testing purposes locally
   await mm.allocateZap(allocateInWeiMMT);
 
-  //100 zap
+  //2000000 zap
   let approved = 2000000;
   let approveWeiZap = web3.utils.toWei(approved.toString(), 'ether');
 
-  //Approve MainMarket an allowance of 100 Zap to use on behalf of msg.sender(User)
+  //Approve MainMarket and Aux Market an allowance of Zap to use on behalf of msg.sender(User)
   await zapToken.approve(mm.address, approveWeiZap);
   await zapToken.approve(am.address, approveWeiZap);
+  await mm.depositZap(approveWeiZap);
+  await mm.bond(10)
+
+
+  //Allocate more after depositing zap into Main Market
+  await mm.allocateZap(allocateInWeiMMT);
+
+  //Setting up second account
+  await mm.allocateZap(allocateInWeiMMT, {from: secondAccount});
+  await zapToken.approve(mm.address, approveWeiZap, {from: secondAccount});
+  await mm.depositZap(approveWeiZap, {from: secondAccount});
+  await mm.bond(10, {from: secondAccount});
+
+
+
+  //Setting up third account
+  await mm.allocateZap(allocateInWeiMMT, {from: thirdAccount});
+  await zapToken.approve(mm.address, approveWeiZap, {from: thirdAccount});
+  await mm.depositZap(approveWeiZap, {from: thirdAccount});
+  await mm.bond(50, {from: thirdAccount});
 };
