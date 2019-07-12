@@ -40,13 +40,13 @@ The Main Market and the Auxiliary Market(s)
 
 ###Functions
 
-- **getHolder**
-`function getHolder(address addr) private returns(MainMarketHolder storage)`
+- **getHolder**  
+`function getHolder(address addr) private returns(MainMarketHolder storage)`  
 gets existing holder and creates one if one doesn't exist
 
-	Parameters:
-	`addr` - address
-	Returns:
+	Parameters:  
+	`addr` - address  
+	Returns:  
 	`holder` - MainMarketHolder storage
 
 - **getEquityStake**
