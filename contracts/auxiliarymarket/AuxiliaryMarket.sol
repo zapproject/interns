@@ -62,7 +62,7 @@ contract AuxiliaryMarket{
         auxiliaryMarketToken.transfer(msg.sender, _quantity);
         //get zap from buyer
         zapToken.transferFrom(msg.sender, address(this), totalWeiZap);
-        
+
         AuxMarketHolder memory holder = holders[msg.sender];
         uint256 newTotalTokens = holder.subTokensOwned.add(_quantity);
 
