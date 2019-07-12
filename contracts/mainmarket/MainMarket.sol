@@ -3,15 +3,15 @@ import "../platform/registry/RegistryInterface.sol";
 import "../platform/bondage/BondageInterface.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
-import "./MainMarketTokenInterface.sol";
 import "../platform/bondage/currentCost/CurrentCostInterface.sol";
 import "../lib/ownership/ZapCoordinator.sol";
 import "../platform/registry/Registry.sol";
 import "../platform/bondage/Bondage.sol";
 import "./MainMarketToken.sol";
 import "../platform/bondage/currentCost/CurrentCost.sol";
+import "./MainMarketInterface.sol";
 
-contract MainMarket {
+contract MainMarket is MainMarketInterface {
     using SafeMath for uint256;
 
     //tokens represents dots bonded
@@ -19,7 +19,7 @@ contract MainMarket {
         bool initialized;
         uint256 tokens;
         uint256 zapBalance;
-        int256 index;
+        bool bonded;
     }
 
     mapping (address => MainMarketHolder) public holders;
@@ -70,7 +70,7 @@ contract MainMarket {
             holder.initialized = true;
             holder.tokens = 0;
             holder.zapBalance = 0;
-            holder.index = -1;
+            holder.bonded = false;
         }
         return holder;
     }
@@ -89,7 +89,7 @@ contract MainMarket {
 
     //This works for any precision
     //Can be used in the future to increase equity precision
-    function percent(uint numerator, uint denominator, uint precision) public returns(uint quotient) {
+    function percent(uint numerator, uint denominator, uint precision) private returns(uint quotient) {
         // caution, check safe-to-multiply here
         uint _numerator  = numerator * 10 ** (precision+1);
         // with rounding of last digit
@@ -116,33 +116,13 @@ contract MainMarket {
         mainMarketToken.transfer(msg.sender, dots);
         holder.zapBalance -= zapSpent;
         holder.tokens += dots;
-        if(holder.index == -1) {
+        if(!holder.bonded) {
             holderAddresses.push(msg.sender);
             holderAddressesLength += 1;
-            //holder.index = holderAddressesLength - 1;
+            holder.bonded = true;
         }
         return zapSpent;
     }
-
-
-//    function deletefromHolderAddresses(address addr) public {
-//        if(holderAddressesLength == 1) {
-//            holderAddressesLength--;
-//            holderAddresses.length--;
-//            return;
-//        }
-//
-//        MainMarketHolder storage holder = getHolder(addr);
-//        require (holder.index != -1, "Holder address is not inside holderAddresses Array");
-//        MainMarketHolder storage lastHolder = getHolder(holderAddresses[holderAddressesLength-1]);
-//        //Place lastHolder in new deleted holder's index position
-//        holderAddresses[holder.index] = holderAddresses[holderAddressesLength-1];
-//        //Update lastHolders new index
-//        lastHolder.index = holder.index;
-//
-//        holderAddressesLength--;
-//        holderAddresses.length--;
-//    }
 
     function remove(address addr) public returns(bool) {
         uint index;
@@ -167,8 +147,9 @@ contract MainMarket {
         mainMarketToken.transferFrom(msg.sender, address(this), dots);
         holder.tokens -= dots;
         zapToken.transfer(msg.sender, netZap);
-        if(holder.tokens  < 1) {
+        if(holder.tokens < 1) {
             remove(msg.sender);
+            holder.bonded = false;
         }
     }
 
@@ -189,8 +170,8 @@ contract MainMarket {
     }
 
     //Once we get query functioning, this will get the Zap Price from OffChain Oracle
-    //function getZapPrice() public view {
-    //}
+    // function getZapPrice() public view {
+    // }
 
     //Withdraw Zap from gains/losses from Auxiliary Market and disperse 5% of
     //the fee based on the percentage of bonded stake on the Main Market
