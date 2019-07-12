@@ -176,7 +176,7 @@ get's User's current AuxiliaryMarketToken balance (corresponding to the asset of
 	Parameters:  
 	`_owner` - address  
 
-###Modifiers
+**Modifiers**
   - **`hasApprovedAMT`**- Requires User to approve the Main Market Contract an allowance to spend amt on their behalf
 
 ## Future of Project
