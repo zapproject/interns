@@ -122,7 +122,7 @@ contract AuxiliaryMarket {
     // }
 
     //Modifiers
-    //Requires User to approve the Main Market Contract an allowance to spend mmt on their behalf
+    //Requires User to approve the Main Market Contract an allowance to spend amt on their behalf
     modifier hasApprovedAMT(uint256 amount) {
         uint256 allowance = auxiliaryMarketToken.allowance(msg.sender, address(this));
         require (allowance >= amount, "Not enough AMT allowance to be spent by Aux Contract");
