@@ -213,7 +213,8 @@ contract MainMarket {
     //Modifiers
     //Requires user to have enough zap to cover the cost of dots
     modifier hasEnoughZapForDots(uint256 dots) {
-        uint256 zapBalance = zapToken.balanceOf(msg.sender);
+        MainMarketHolder storage holder = getHolder(msg.sender);
+        uint256 zapBalance = holder.zapBalance;
         uint256 issued = bondage.getDotsIssued(address(this), endPoint);
         require(issued + dots <= bondage.dotLimit(address(this), endPoint), "Error: Dot limit exceeded");
         uint256 numZapForDots = currentCost._costOfNDots(address(this), endPoint, issued + 1, dots - 1);

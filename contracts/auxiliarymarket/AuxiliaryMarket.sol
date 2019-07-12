@@ -113,14 +113,16 @@ contract AuxiliaryMarket {
         return auxiliaryMarketToken.balanceOf(_owner);
     }
 
-        //Requires User to approve the Main Market Contract an allowance to spend mmt on their behalf
+
+    // function test() public returns(uint256){
+    //    return holders[msg.sender].avgPrice;
+    // }
+
+    //Modifiers
+    //Requires User to approve the Main Market Contract an allowance to spend mmt on their behalf
     modifier hasApprovedAMT(uint256 amount) {
         uint256 allowance = auxiliaryMarketToken.allowance(msg.sender, address(this));
         require (allowance >= amount, "Not enough AMT allowance to be spent by Aux Contract");
         _;
     }
-
-    // function test() public returns(uint256){
-    //    return holders[msg.sender].avgPrice;
-    // }
 }
