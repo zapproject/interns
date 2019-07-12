@@ -1,43 +1,42 @@
 pragma solidity ^0.5.8;
 
+import "../helpers/SafeMath.sol";
 import "../mainmarket/MainMarket.sol";
 import "./AuxiliaryMarketInterface.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
 import "./AuxiliaryMarketTokenInterface.sol";
-import "./MainMarket.sol";
-    
-contract AuxiliaryMarket{
+
+contract AuxiliaryMarket {
     using SafeMath for uint256;
 
     ZapCoordinatorInterface public coordinator;
     ZapToken public zapToken;
+    MainMarket public mainMarket;
     AuxiliaryMarketTokenInterface public auxiliaryMarketToken;
     MainMarket public mainMaket;
     // uint256 public auxTokenPrice; //in wei might not need
 
     constructor(address _zapCoor) public {
         coordinator = ZapCoordinatorInterface(_zapCoor);
-        auxiliaryMarketToken = AuxiliaryMarketTokenInterface(coordinator.getContract("AUXILIARYMARKET_TOKEN"));
-        zapToken = ZapToken(coordinator.getContract("ZAP_TOKEN"));
-
-        //import main market
         address mainMarketAddr = coordinator.getContract("MAINMARKET");
         mainMarket = MainMarket(mainMarketAddr);
+        auxiliaryMarketToken = AuxiliaryMarketTokenInterface(coordinator.getContract("AUXILIARYMARKET_TOKEN"));
+        zapToken = ZapToken(coordinator.getContract("ZAP_TOKEN"));
     }
 
     //asset prices in wei
-    uint[] public assetPrices = [3213875942658800128, 6427751885317600256, 9641627827976400896, 12855503770635200512, 16069379713294000128, 19283255655952801792, 22497131598611599360, 25711007541270401024, 28924883483929198592,
-    32138759426588000256, 35352635369246801920, 38566511311905603584, 41780387254564397056, 44994263197223198720, 48208139139882000384, 51422015082540802048];
+    uint[] public assetPrices = [3213875942658800128, 6427751885317600256, 9641627827976400896,
+    12855503770635200512, 16069379713294000128, 19283255655952801792, 22497131598611599360,
+    25711007541270401024, 28924883483929198592, 32138759426588000256, 35352635369246801920,
+    38566511311905603584, 41780387254564397056, 44994263197223198720, 48208139139882000384,
+    51422015082540802048];
 
     // Ethereum Wei in One Zap
     uint zapInWei = 28449300676025;
-    // Precision of AuxMarketToken (18 Decimals)
     uint precision = 10 ** 18;
-    // weiZap in One Zap
     uint weiZap = precision;
-    // WeiZap in One Ethereum Wei
-    uint weiInWeiZap = weiZap.div(zapInWei);
+    uint weiInWeiZap = weiZap.div(zapInWei); // amount of weiZap in one wei
 
     function random() public returns (uint) {
         return uint(keccak256(abi.encodePacked(block.difficulty, now, assetPrices)));
@@ -56,7 +55,8 @@ contract AuxiliaryMarket{
 
     function buy(uint256 _quantity) public payable returns(uint256){
         // get current price in wei
-        uint256 totalWeiCost = getCurrentPrice()/precision * _quantity;
+
+        uint256 totalWeiCost = 51422015082540802048/precision * _quantity;
 
         //turn price from wei to weiZap
         uint256 totalWeiZap = totalWeiCost * weiInWeiZap;
@@ -65,14 +65,13 @@ contract AuxiliaryMarket{
         auxiliaryMarketToken.transfer(msg.sender, _quantity);
         //get zap from buyer
         zapToken.transferFrom(msg.sender, address(this), totalWeiZap);
-        
+        address mainMarketAddr = coordinator.getContract("MAINMARKET");
+        zapToken.transfer(mainMarketAddr, totalWeiZap);
+
         AuxMarketHolder memory holder = holders[msg.sender];
         uint256 newTotalTokens = holder.subTokensOwned.add(_quantity);
-
         // holder struct with price bought in and amount of subtokens
-        uint256 avgPrice =
-        (totalWeiCost + holder.avgPrice * holder.subTokensOwned)
-            .div(newTotalTokens);
+        uint256 avgPrice = (totalWeiCost + holder.avgPrice * holder.subTokensOwned).div(newTotalTokens);
 
         holder.avgPrice = avgPrice;
         holder.subTokensOwned = newTotalTokens;
@@ -81,23 +80,20 @@ contract AuxiliaryMarket{
         // Map holder msg.sender to key: value being holder struct
     }
 
-    function sell(uint256 _quantity) public payable {
+    function sell(uint256 _quantity) public hasApprovedAMT(_quantity) {
+        address mainMarketAddr = coordinator.getContract("MAINMARKET");
+        require(_quantity < auxiliaryMarketToken.balanceOf(msg.sender), "You do not own enough AMT");
 
-        require (auxiliaryMarketToken.balanceOf(msg.sender) > _quantity);
-        
-        //get sell position
-        uint256 weiPrice = getCurrentPrice()/precision * _quantity;
-        //turn to weizap
-        uint256 weiZapPrice = weiPrice * weiInWeiZap
+        uint256 totalWeiCost = 3213875942658800128/precision * _quantity;
+        uint256 totalWeiZap = totalWeiCost * weiInWeiZap;
 
-        require (weiZapPrice < zapToken.balanceOf(msg.sender));
-        
-        //send aux from msg.sender to this contrac
-        auxiliaryMarketToken.transfer(address(this), _quantity);
 
-        //send the zap from main market to the buyer
-        withdraw(weiZapPrice, msg.sender);
 
+        require(getBalance(mainMarketAddr) > totalWeiZap, "Not enough Zap in Wallet");
+
+        mainMarket.withdraw(totalWeiZap, msg.sender);
+
+        auxiliaryMarketToken.transferFrom(msg.sender, address(this), _quantity);
     }
 
     // Grabs current price of asset
@@ -115,35 +111,20 @@ contract AuxiliaryMarket{
         zapToken.allocate(msg.sender, amount);
     }
 
-    function getAMTBalance(address _owner) public returns(uint256) {
+    function getAMTBalance(address _owner) public view returns(uint256) {
         return auxiliaryMarketToken.balanceOf(_owner);
     }
 
-    function test() public returns(uint256){
-       return holders[msg.sender].avgPrice;
-    }
 
+    // function test() public returns(uint256){
+    //    return holders[msg.sender].avgPrice;
+    // }
 
-    /**
-     * These functions are to be used on querying oracles
-     */
-    // https://ethereum.stackexchange.com/questions/884/how-to-convert-an-address-to-bytes-in-solidity
-    function toBytes(address x) public pure returns (bytes memory b) {
-        b = new bytes(20);
-        for (uint i = 0; i < 20; i++)
-            b[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
-    }
-
-    //https://ethereum.stackexchange.com/questions/2519/how-to-convert-a-bytes32-to-string
-    function bytes32ToString(bytes32 x) public pure returns (string memory) {
-        bytes memory bytesString = new bytes(32);
-        bytesString = abi.encodePacked(x);
-        return string(bytesString);
-    }
-
-    //Slightly modified version of
-    //https://ethereum.stackexchange.com/questions/69213/convert-64-byte-public-key-to-20-byte-address-in-solidity
-    function bytesToAddr (bytes memory b) public pure returns (address) {
-        return address (uint160 (uint256 (keccak256 (b))));
+    //Modifiers
+    //Requires User to approve the Main Market Contract an allowance to spend mmt on their behalf
+    modifier hasApprovedAMT(uint256 amount) {
+        uint256 allowance = auxiliaryMarketToken.allowance(msg.sender, address(this));
+        require (allowance >= amount, "Not enough AMT allowance to be spent by Aux Contract");
+        _;
     }
 }
