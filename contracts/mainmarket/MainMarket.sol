@@ -19,7 +19,7 @@ contract MainMarket {
         bool initialized;
         uint256 tokens;
         uint256 zapBalance;
-        int256 index;
+        bool bonded;
     }
 
     mapping (address => MainMarketHolder) public holders;
@@ -37,7 +37,7 @@ contract MainMarket {
 
 
     bytes32 public endPoint = "Bond";
-    int256[] curve1 = [1,1,1000];
+    int256[] curve1 = [1,1,1000]; 
     
     constructor(address _zapCoor) public {
 
@@ -70,7 +70,7 @@ contract MainMarket {
             holder.initialized = true;
             holder.tokens = 0;
             holder.zapBalance = 0;
-            holder.index = -1;
+            holder.bonded = false;
         }
         return holder;
     }
@@ -116,10 +116,10 @@ contract MainMarket {
         mainMarketToken.transfer(msg.sender, dots);
         holder.zapBalance -= zapSpent;
         holder.tokens += dots;
-        if(holder.index == -1) {
+        if(!holder.bonded) {
             holderAddresses.push(msg.sender);
             holderAddressesLength += 1;
-            //holder.index = holderAddressesLength - 1;
+            holder.bonded = true;
         }
         return zapSpent;
     }
@@ -169,6 +169,7 @@ contract MainMarket {
         zapToken.transfer(msg.sender, netZap);
         if(holder.tokens  < 1) {
             remove(msg.sender);
+            holder.bonded = false;
         }
     }
 

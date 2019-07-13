@@ -87,8 +87,6 @@ contract AuxiliaryMarket {
         uint256 totalWeiCost = 3213875942658800128/precision * _quantity;
         uint256 totalWeiZap = totalWeiCost * weiInWeiZap;
 
-
-
         require(getBalance(mainMarketAddr) > totalWeiZap, "Not enough Zap in Wallet");
 
         mainMarket.withdraw(totalWeiZap, msg.sender);
