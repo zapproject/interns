@@ -14,7 +14,8 @@ contract AuxiliaryMarket {
     ZapToken public zapToken;
     MainMarket public mainMarket;
     AuxiliaryMarketTokenInterface public auxiliaryMarketToken;
-    uint256 public auxTokenPrice; //in wei
+    MainMarket public mainMaket;
+    // uint256 public auxTokenPrice; //in wei might not need
 
     constructor(address _zapCoor) public {
         coordinator = ZapCoordinatorInterface(_zapCoor);
@@ -87,8 +88,6 @@ contract AuxiliaryMarket {
 
         uint256 totalWeiCost = 3213875942658800128/precision * _quantity;
         uint256 totalWeiZap = totalWeiCost * weiInWeiZap;
-
-
 
         require(getBalance(mainMarketAddr) > totalWeiZap, "Not enough Zap in Wallet");
 
