@@ -15,6 +15,7 @@ const Cost = artifacts.require("CurrentCost");
 
 
 const MainMarket  = artifacts.require('MainMarket.sol');
+const MainMarketToken  = artifacts.require('MainMarketToken.sol');
 const AuxiliaryMarket  = artifacts.require('AuxiliaryMarket.sol');
 const AuxiliaryMarketToken  = artifacts.require('AuxiliaryMarketToken.sol');
 
@@ -51,11 +52,15 @@ contract('Main Market', (accounts) => {
 
 
 		//deploy asset market contracts
+		mmt = await MainMarketToken.new();
+		await zapcoor.addImmutableContract('MAINMARKET_TOKEN', mmt.address);
+
 		mm = await MainMarket.new(zapcoor.address);
-		await zapcoor.updateContract('MAINMARKET', mm.address);
+		await zapcoor.addImmutableContract('MAINMARKET', mm.address);
+
 
 		am = await AuxiliaryMarket.new(zapcoor.address);
-		await zapcoor.updateContract('MAINMARKET', mm.address);
+		await zapcoor.addImmutableContract('AUXMARKET', mm.address);
 
 	    // const zapWeiAmount = new BigNumber("2000000e18");
 	    const zapWeiAmount = web3.utils.toWei('2000000', 'ether');
@@ -72,52 +77,45 @@ contract('Main Market', (accounts) => {
 		await zapToken.approve(am.address, zapWeiAmount, {from: user3});
 
 		await mm.depositZap(zapWeiAmount, {from: user1});
+		await mm.depositZap(zapWeiAmount, {from: user2});
+
+		//Mint initial 100 million MMT Tokens for Main Market to disperse to users who bond
+		let mmWeiToken = web3.utils.toWei('100000000', 'ether');
+		mmt.mint(mm.address, mmWeiToken);
 	});
 
 	it('can bond', async () => {
 
 		let user1Bal = await mm.getZapBalance.call(user1);
-		console.log("user1 zap bal: ", user1Bal.toString());
 
-		await mm.bond(20);
-		await mm.bond(30);
+		let approveAmount = await zapToken.allowance(mm.address, bondage.address);
 
-		let marketTokensOwned = await mm.getMMTBalance.call(accounts[0]);
+		await mm.bond(20, {from: user1});
+		await mm.bond(30, {from: user1});
+
+		let marketTokensOwned = await mm.getMMTBalance.call(user1);
 		assert.equal(marketTokensOwned.toString(), 50, "should have 50 main market tokens");
 	});
 
-	// it('gets equity of holder', async () => {
-	// 	// let mm = await MainMarket.deployed();
-	// 	// let zapToken = await ZapToken.deployed();
+	it('gets equity of holder', async () => {
+		await mm.bond(50, {from: user2});
 
-	// 	let zapInWei = await mm.zapInWei();
+		let user1Equity = await mm.getEquityStake.call(user1);
+		let user2Equity = await mm.getEquityStake.call(user2);
 
-	// 	//give 100 zap to account[1] for testing
-	// 	let allocateAmount = zapInWei.toString() + '00';
-	// 	await mm.allocateZap(allocateAmount, {from: accounts[1]});
+		//accoutn[0] should have the 50 tokens from previous test
+		assert.equal(user1Equity.toString(),"50", "account 0 has 50% equity");
+		assert.equal(user2Equity.toString(),"50", "account 1 has 50% equity");
 
-	// 	//approve and deposit zap to main market
-	// 	await zapToken.approve(mm.address, 500, {from: accounts[1]});
-	// 	await mm.depositZap(100, {from: accounts[1]});
-
-	// 	await mm.bond(50, {from: accounts[1]});
-
-	// 	let user0Equity = await mm.getEquityStake.call(accounts[0]);
-	// 	let user1Equity = await mm.getEquityStake.call(accounts[1]);
-
-	// 	//accoutn[0] should have the 50 tokens from previous test
-	// 	assert.equal(user0Equity.toString(),"50", "account 0 has 50% equity");
-	// 	assert.equal(user1Equity.toString(),"50", "account 1 has 50% equity");
-
-	// 	await mm.bond(20, {from: accounts[1]});
+		await mm.bond(20, {from: user2});
 		
-	// 	//get updated equity
-	// 	user0Equity = await mm.getEquityStake.call(accounts[0]);
-	// 	user1Equity = await mm.getEquityStake.call(accounts[1]);
+		//get updated equity
+		user1Equity = await mm.getEquityStake.call(user1);
+		user2Equity = await mm.getEquityStake.call(user2);
 
-	// 	assert.equal(user0Equity.toString(),"41", "account 0 has 41% equity");
-	// 	assert.equal(user1Equity.toString(),"58", "account 1 has 58% equity");
-	// });
+		assert.equal(user1Equity.toString(),"41", "account 0 has 41% equity");
+		assert.equal(user2Equity.toString(),"58", "account 1 has 58% equity");
+	});
 
 	// it('can withdraw', async () => {
 	// 	// let mainMarket = await MainMarket.deployed();
