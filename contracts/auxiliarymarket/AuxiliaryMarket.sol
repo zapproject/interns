@@ -34,9 +34,12 @@ contract AuxiliaryMarket {
 
     // Ethereum Wei in One Zap
     uint zapInWei = 28449300676025;
+    // Precision of AuxMarketToken (18 Decimals)
     uint precision = 10 ** 18;
+    // weiZap in One Zap
     uint weiZap = precision;
-    uint weiInWeiZap = weiZap.div(zapInWei); // amount of weiZap in one wei
+    // WeiZap in One Ethereum Wei
+    uint weiInWeiZap = weiZap.div(zapInWei);
 
     function random() public returns (uint) {
         return uint(keccak256(abi.encodePacked(block.difficulty, now, assetPrices)));
@@ -55,7 +58,6 @@ contract AuxiliaryMarket {
 
     function buy(uint256 _quantity) public payable returns(uint256){
         // get current price in wei
-
         uint256 totalWeiCost = 51422015082540802048/precision * _quantity;
 
         //turn price from wei to weiZap
@@ -119,7 +121,7 @@ contract AuxiliaryMarket {
     // }
 
     //Modifiers
-    //Requires User to approve the Main Market Contract an allowance to spend mmt on their behalf
+    //Requires User to approve the Main Market Contract an allowance to spend amt on their behalf
     modifier hasApprovedAMT(uint256 amount) {
         uint256 allowance = auxiliaryMarketToken.allowance(msg.sender, address(this));
         require (allowance >= amount, "Not enough AMT allowance to be spent by Aux Contract");
