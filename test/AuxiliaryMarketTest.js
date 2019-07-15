@@ -2,10 +2,12 @@ const AuxiliaryMarket = artifacts.require('AuxiliaryMarket.sol');
 const ZapToken = artifacts.require('ZapToken.sol');
 
 contract('Auxiliary Market', accounts => {
-  // beforeEach(async () => {
-  //   let zapToken = await ZapToken.deployed();
-  //   let auxMarket = await AuxiliaryMarket.deployed();
-  // });
+  const user = accounts[0];
+
+  before(async () => {
+    let zapToken = await ZapToken.deployed();
+    let auxMarket = await AuxiliaryMarket.deployed();
+  });
 
   it('user should have 2000000 zap', async () => {
     let zapToken = await ZapToken.deployed();

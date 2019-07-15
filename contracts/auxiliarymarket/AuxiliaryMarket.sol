@@ -7,7 +7,7 @@ import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
 import "./AuxiliaryMarketTokenInterface.sol";
 
-contract AuxiliaryMarket {
+contract AuxiliaryMarket is AuxiliaryMarketInterface {
     using SafeMath for uint256;
 
     ZapCoordinatorInterface public coordinator;
@@ -56,9 +56,9 @@ contract AuxiliaryMarket {
       //@_quantity is auxwei
     // Transfer zap from holder to market
 
-    function buy(uint256 _quantity) public payable returns(uint256){
+    function buy(uint256 _quantity) public returns(uint256){
         // get current price in wei
-        uint256 totalWeiCost = 51422015082540802048/precision * _quantity;
+        uint256 totalWeiCost = 51422015082540802048/precision * _quantity; //Change to SafeMath
 
         //turn price from wei to weiZap
         uint256 totalWeiZap = totalWeiCost * weiInWeiZap;
@@ -86,8 +86,8 @@ contract AuxiliaryMarket {
         address mainMarketAddr = coordinator.getContract("MAINMARKET");
         require(_quantity < auxiliaryMarketToken.balanceOf(msg.sender), "You do not own enough AMT");
 
-        uint256 totalWeiCost = 3213875942658800128/precision * _quantity;
-        uint256 totalWeiZap = totalWeiCost * weiInWeiZap;
+        uint256 totalWeiCost = 3213875942658800128/precision * _quantity; //Change to SafeMath
+        uint256 totalWeiZap = totalWeiCost * weiInWeiZap; //Change to SafeMath
 
         require(getBalance(mainMarketAddr) > totalWeiZap, "Not enough Zap in Wallet");
 
@@ -116,11 +116,6 @@ contract AuxiliaryMarket {
     function getAMTBalance(address _owner) public view returns(uint256) {
         return auxiliaryMarketToken.balanceOf(_owner);
     }
-
-
-    // function test() public returns(uint256){
-    //    return holders[msg.sender].avgPrice;
-    // }
 
     //Modifiers
     //Requires User to approve the Main Market Contract an allowance to spend amt on their behalf
