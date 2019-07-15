@@ -51,7 +51,7 @@ module.exports = async function(deployer) {
   await mm.depositZap(approveWeiZap);
   await mm.bond(10);
 
-  //Allocate more after depositing zap into Main Market
+  // //Allocate more after depositing zap into Main Market
   await mm.allocateZap(allocateInWeiMMT);
 
   //Setting up second account
