@@ -49,23 +49,20 @@ module.exports = async function(deployer) {
   await zapToken.approve(mm.address, approveWeiZap);
   await zapToken.approve(am.address, approveWeiZap);
   await mm.depositZap(approveWeiZap);
-  await mm.bond(10)
-
+  await mm.bond(10);
 
   //Allocate more after depositing zap into Main Market
   await mm.allocateZap(allocateInWeiMMT);
 
   //Setting up second account
-  await mm.allocateZap(allocateInWeiMMT, {from: secondAccount});
-  await zapToken.approve(mm.address, approveWeiZap, {from: secondAccount});
-  await mm.depositZap(approveWeiZap, {from: secondAccount});
-  await mm.bond(10, {from: secondAccount});
-
-
+  await mm.allocateZap(allocateInWeiMMT, { from: secondAccount });
+  await zapToken.approve(mm.address, approveWeiZap, { from: secondAccount });
+  await mm.depositZap(approveWeiZap, { from: secondAccount });
+  await mm.bond(10, { from: secondAccount });
 
   //Setting up third account
-  await mm.allocateZap(allocateInWeiMMT, {from: thirdAccount});
-  await zapToken.approve(mm.address, approveWeiZap, {from: thirdAccount});
-  await mm.depositZap(approveWeiZap, {from: thirdAccount});
-  await mm.bond(50, {from: thirdAccount});
+  await mm.allocateZap(allocateInWeiMMT, { from: thirdAccount });
+  await zapToken.approve(mm.address, approveWeiZap, { from: thirdAccount });
+  await mm.depositZap(approveWeiZap, { from: thirdAccount });
+  await mm.bond(50, { from: thirdAccount });
 };

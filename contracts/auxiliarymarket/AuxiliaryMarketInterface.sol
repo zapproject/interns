@@ -1,22 +1,10 @@
 pragma solidity ^0.5.8;
 
 contract AuxiliaryMarketInterface{
-
-    //Events
-    event Transfer (address, address, uint256);
-
-    //User Functions
-    function getCurrentPrice() external returns(uint256);
-    function getBalance(address) external view returns(uint256);
-    function sellAsset(uint256) external returns(uint256);
-    function buyAsset(uint256) external returns(uint256);
-
-    //Auxiliary Market Functions
-    function transferZap(address, address, uint256) external returns (bool);
-    function transferSubToken(address, address, uint256) external returns (bool);
-
-    //MainMakret Interaction Functions
-    function sendToMainMarket(address, address, uint256) external returns (bool);
-    function getFromMainMarket(address, address, uint256) external returns (bool);
-
+    function buy(uint256) public returns(uint256);
+    function sell(uint256) public;
+    function getCurrentPrice() public returns(uint256);
+    function getBalance(address) public view returns(uint256);
+    function allocateZap(uint256) public;
+    function getAMTBalance(address) public view returns(uint256);
 }
