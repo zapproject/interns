@@ -179,7 +179,7 @@ contract MainMarket is MainMarketInterface {
         uint256 fee = (amount.mul(5)).div(100);
         for (uint i = 0; i < holderAddressesLength; i++) {
             uint256 equity = getEquityStake(holderAddresses[i]);
-            uint256 equityAmount = equity.mul((fee.div(100)));
+            uint256 equityAmount = equity.mul(fee).div(100);
             zapToken.transfer(holderAddresses[i], equityAmount);
         }
         uint256 netAmount = amount - fee;

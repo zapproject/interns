@@ -54,13 +54,14 @@ contract('Main Market', (accounts) => {
 		//deploy asset market contracts
 		mmt = await MainMarketToken.new();
 		await zapcoor.addImmutableContract('MAINMARKET_TOKEN', mmt.address);
-
 		mm = await MainMarket.new(zapcoor.address);
 		await zapcoor.addImmutableContract('MAINMARKET', mm.address);
 
 
+		amt = await AuxiliaryMarketToken.new();
+		await zapcoor.addImmutableContract('AUXILIARYMARKET_TOKEN', amt.address);
 		am = await AuxiliaryMarket.new(zapcoor.address);
-		await zapcoor.addImmutableContract('AUXMARKET', mm.address);
+		await zapcoor.addImmutableContract('AUXMARKET', am.address);
 
 	    // const zapWeiAmount = new BigNumber("2000000e18");
 	    const zapWeiAmount = web3.utils.toWei('2000000', 'ether');
@@ -75,16 +76,20 @@ contract('Main Market', (accounts) => {
 		await zapToken.approve(mm.address,zapWeiAmount, {from: user1});
 		await zapToken.approve(mm.address, zapWeiAmount, {from: user2});
 		await zapToken.approve(am.address, zapWeiAmount, {from: user3});
+		//user3 need to approve auxtoken to be able to sell it back to auxiliary contact
+
 
 		await mm.depositZap(zapWeiAmount, {from: user1});
 		await mm.depositZap(zapWeiAmount, {from: user2});
 
+		let mintAmount = web3.utils.toWei('100000000', 'ether');
 		//Mint initial 100 million MMT Tokens for Main Market to disperse to users who bond
-		let mmWeiToken = web3.utils.toWei('100000000', 'ether');
-		mmt.mint(mm.address, mmWeiToken);
+		mmt.mint(mm.address, mintAmount);
+		//Mint initial 100 million AMT Tokens for Main Market to disperse to users who that want to buy asset tokens
+		amt.mint(am.address, mintAmount);
 	});
 
-	it('can bond', async () => {
+	it('can bond', async function deployContract() {
 
 		let user1Bal = await mm.getZapBalance.call(user1);
 
@@ -117,24 +122,30 @@ contract('Main Market', (accounts) => {
 		assert.equal(user2Equity.toString(),"58", "account 1 has 58% equity");
 	});
 
-	// it('can withdraw', async () => {
-	// 	// let mainMarket = await MainMarket.deployed();
-	// 	// let auxMarket = await AuxiliaryMarket.deployed();
-	// 	let auxMarketToken = await AuxiliaryMarketToken.deployed();
-		
-	// 	let originalZapBal = await mainMarket.getZapBalance.call(accounts[0]);
-	// 	var zapb3 = await mainMarket.getZapBalance.call(accounts[2]);
+	it('can withdraw', async () => {
+		let originalZapBal = await mm.getZapBalance.call(user1);
 
-	// 	//account 3 buys 10 auxwei tokens @ 51422015082540802048 wei
-	// 	let priceInweiZap = auxMarket.buy(10, {from: accounts[2]});
-	// 	//need to approce aux market to spend aux token before selling
-	// 	await auxMarketToken.approve(auxMarket.address,10, {from: accounts[2]});
-	// 	//then sells it 10 @ 3213875942658800128
-	// 	auxMarket.sell(10, {from: accounts[2]});
+		// account 3 buys 10 auxwei tokens @ 51422015082540802048 wei
+		let buyPrice = await am.buy.call(10, {from: user3});
+		await am.buy(10, {from: user3});
+		// need to approve aux market to spend aux token
+		await amt.approve(am.address,10, {from: user3});
+		//then sells it 10 @ 3213875942658800128
+		let sellPrice = await am.sell.call(5, {from: user3});
+		await am.sell(5, {from: user3});
 
-	// 	let newZapBalance = await mainMarket.getZapBalance(accounts[0]);
+		let fee = Math.floor(sellPrice.toNumber() * .05);
+		let user1Equity = await mm.getEquityStake.call(user1);
+			user1Equity = user1Equity.toNumber() / 100;
 
-	// 	console.log("price In weiZap: ", priceInweiZap);
+		let user1ExpectedZap = Math.floor(originalZapBal.toNumber() + (fee * user1Equity));
+		let user1ActualZap = await mm.getZapBalance.call(user1);
 
-	// });
+		console.log("fee                 : ", fee);
+		console.log("user1 equity        : ", user1Equity);
+		console.log("user1 expected      : ", user1ExpectedZap);
+		console.log("user1 actual        : ", user1ActualZap.toNumber());
+
+		assert.equal(user1ActualZap.toNumber(), user1ExpectedZap, 'user1 did not receive correct amount of zap');
+	});
 });

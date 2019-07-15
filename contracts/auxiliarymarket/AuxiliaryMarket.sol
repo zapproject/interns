@@ -82,7 +82,7 @@ contract AuxiliaryMarket {
         // Map holder msg.sender to key: value being holder struct
     }
 
-    function sell(uint256 _quantity) public hasApprovedAMT(_quantity) {
+    function sell(uint256 _quantity) public hasApprovedAMT(_quantity) returns(uint256) {
         address mainMarketAddr = coordinator.getContract("MAINMARKET");
         require(_quantity < auxiliaryMarketToken.balanceOf(msg.sender), "You do not own enough AMT");
 
@@ -94,6 +94,8 @@ contract AuxiliaryMarket {
         mainMarket.withdraw(totalWeiZap, msg.sender);
 
         auxiliaryMarketToken.transferFrom(msg.sender, address(this), _quantity);
+
+        return totalWeiZap;
     }
 
     // Grabs current price of asset
