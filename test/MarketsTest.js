@@ -19,15 +19,17 @@ const MainMarketToken  = artifacts.require('MainMarketToken.sol');
 const AuxiliaryMarket  = artifacts.require('AuxiliaryMarket.sol');
 const AuxiliaryMarketToken  = artifacts.require('AuxiliaryMarketToken.sol');
 
-contract('Main Market', (accounts) => {
+contract('Auxiliary and Main Market', (accounts) => {
 	let mm, zapToken, auxmarket;
 
 	const user1 = accounts[0];
 	const user2 = accounts[1];
 	const user3 = accounts[2];
 
+	const user4 = accounts[3];
+	//Create New Instances of all Contracts for a clean slate to test
 	before(async () => {
-		/***Deploy zap contrracts ***/
+		/***Deploy zap contracts ***/
 		zapdb = await ZapDB.new();
 		zapcoor = await ZapCoor.new();
 		await zapdb.transferOwnership(zapcoor.address);
@@ -66,11 +68,16 @@ contract('Main Market', (accounts) => {
 	    // const zapWeiAmount = new BigNumber("2000000e18");
 	    const zapWeiAmount = web3.utils.toWei('2000000', 'ether');
 
-		//give zap to the three users
+		//Allocate zap to four users
 		// zapToken.allocate(user1, zapWeiAmount, {from: user1});
+		//Main market Users
 		await zapToken.allocate(user1, zapWeiAmount, {from: user1});
 		await zapToken.allocate(user2, zapWeiAmount, {from: user2});
+
 		await zapToken.allocate(user3, zapWeiAmount, {from: user3});
+		await zapToken.allocate(user4, zapWeiAmount, {from: user4});
+		await zapToken.approve(am.address, zapWeiAmount, {from: user4});
+
 
 		//approve zap to the three users
 		await zapToken.approve(mm.address,zapWeiAmount, {from: user1});
@@ -145,7 +152,47 @@ contract('Main Market', (accounts) => {
 		console.log("user1 equity        : ", user1Equity);
 		console.log("user1 expected      : ", user1ExpectedZap);
 		console.log("user1 actual        : ", user1ActualZap.toNumber());
-
+		//Bonded User recives right amount of fee based on equity
 		assert.equal(user1ActualZap.toNumber(), user1ExpectedZap, 'user1 did not receive correct amount of zap');
 	});
+
+	it('can unbond', async () => {
+		let user1Bal = await mm.getZapBalance.call(user1);
+		console.log("Before Unbonding", user1Bal.toString())
+		await mmt.approve(mm.address, 50);
+		await mm.unbond(50, {from: user1});
+		user1Bal = await mm.getZapBalance.call(user1);
+		console.log("After Unbonding", user1Bal.toString())
+		let marketTokensOwned = await mm.getMMTBalance.call(user1);
+		assert.equal(marketTokensOwned.toString(), 0, "should have 0 main market tokens");
+	});
+
+	it('Can buy Asset tokens', async () => {
+	
+		const originalZapBal = await zapToken.balanceOf.call(user4);
+		console.log('originalZapBal: ', originalZapBal.toString());
+		let auxWeiQuantity = 10;
+	
+		//in weiZap
+		let assetPrice = await am.buy.call(auxWeiQuantity, {from: user4});
+		await am.buy(auxWeiQuantity, {from: user4}); //call fucntion without .call
+	
+		let auxWeiBalance = await am.getAMTBalance.call(user4);
+		assert.equal(auxWeiBalance, auxWeiQuantity, 'should have 10 auxWei token');
+	
+		console.log(
+		  'Buy Price of: ',
+		  assetPrice.toLocaleString('fullwide', { useGrouping: false })
+		);
+	
+		let newZapBalance = await zapToken.balanceOf.call(user4);
+		console.log('new zap bal: ', newZapBalance.toString());
+		let expected = originalZapBal - assetPrice;
+		//2000000 - assetPirice should be new zap balance;
+		assert.equal(
+		  newZapBalance.toString(),
+		  expected,
+		  'should send the right amount of zap'
+		);
+	  });
 });

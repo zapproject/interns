@@ -28,12 +28,12 @@ contract MainMarket is MainMarketInterface {
     uint256 public zapInWei = 28449300676025;
 
 
-    Registry public registry;
-    Bondage public bondage;
-    ZapCoordinator public coordinator;
+    RegistryInterface public registry;
+    BondageInterface public bondage;
+    ZapCoordinatorInterface public coordinator;
     ZapToken public zapToken;
-    MainMarketToken public mainMarketToken;
-    CurrentCost public currentCost;
+    MainMarketTokenInterface public mainMarketToken;
+    CurrentCostInterface public currentCost;
 
 
     bytes32 public endPoint = "Bond";
@@ -41,7 +41,7 @@ contract MainMarket is MainMarketInterface {
     
     constructor(address _zapCoor) public {
 
-        coordinator = ZapCoordinator(_zapCoor);
+        coordinator = ZapCoordinatorInterface(_zapCoor);
 
         address bondageAddress = coordinator.getContract("BONDAGE");
         address mainMarketTokenAddress = coordinator.getContract("MAINMARKET_TOKEN");
@@ -50,11 +50,11 @@ contract MainMarket is MainMarketInterface {
         address currentCostAddress = coordinator.getContract("CURRENT_COST");
 
 
-        mainMarketToken = MainMarketToken(mainMarketTokenAddress);
-        bondage = Bondage(bondageAddress);
+        mainMarketToken = MainMarketTokenInterface(mainMarketTokenAddress);
+        bondage = BondageInterface(bondageAddress);
         zapToken = ZapToken(zapTokenAddress);
-        registry = Registry(registryAddress);
-        currentCost = CurrentCost(currentCostAddress);
+        registry = RegistryInterface(registryAddress);
+        currentCost = CurrentCostInterface(currentCostAddress);
 
 
         bytes32 title = "Main market";
@@ -124,7 +124,7 @@ contract MainMarket is MainMarketInterface {
         return zapSpent;
     }
 
-    function remove(address addr) public returns(bool) {
+    function removeHolder(address addr) public returns(bool) {
         uint index;
         for (uint i = 0; i < holderAddressesLength; i++){
             if(holderAddresses[i] == addr) index = i;
@@ -148,7 +148,7 @@ contract MainMarket is MainMarketInterface {
         holder.tokens -= dots;
         zapToken.transfer(msg.sender, netZap);
         if(holder.tokens < 1) {
-            remove(msg.sender);
+            removeHolder(msg.sender);
             holder.bonded = false;
         }
     }
