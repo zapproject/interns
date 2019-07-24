@@ -1,7 +1,7 @@
 pragma solidity ^0.5.8;
 
 import "../helpers/SafeMath.sol";
-import "../mainmarket/MainMarket.sol";
+import "../mainmarket/MainMarketInterface.sol";
 import "./AuxiliaryMarketInterface.sol";
 import "../lib/ownership/ZapCoordinatorInterface.sol";
 import "../token/ZapToken.sol";
@@ -20,7 +20,7 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
 
     ZapCoordinatorInterface public coordinator;
     ZapToken public zapToken;
-    MainMarket public mainMarket;
+    MainMarketInterface public mainMarket;
     AuxiliaryMarketTokenInterface public auxiliaryMarketToken;
     // uint256 public auxTokenPrice; //in wei might not need
 
@@ -34,7 +34,7 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     // Ethereum Wei in One Zap
     uint zapInWei = 28449300676025;
     // Precision of AuxMarketToken (18 Decimals)
-    uint precision;
+    uint precision = 10 ** 18;
     // weiZap in One Zap
     uint weiZap = precision;
     // WeiZap in One Ethereum Wei
@@ -43,10 +43,10 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
 
     constructor(address _zapCoor) public {
         coordinator = ZapCoordinatorInterface(_zapCoor);
-        mainMarket = MainMarket(coordinator.getContract("MAINMARKET"));
+        mainMarket = MainMarketInterface(coordinator.getContract("MAINMARKET"));
         auxiliaryMarketToken = AuxiliaryMarketTokenInterface(coordinator.getContract("AUXILIARYMARKET_TOKEN"));
         zapToken = ZapToken(coordinator.getContract("ZAP_TOKEN"));
-        precision = pow(10, 18);
+        //precision = pow(10, 18);
     }
 
     //@_quantity is auxwei
@@ -54,10 +54,11 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     function buy(uint256 _quantity) public returns(uint256){
         // get current price in wei
         uint256 currentPrice = 51422015082540802048;
-        uint256 totalWeiCost = currentPrice.div(precision).mul(_quantity);
+        uint256 totalWeiCost = currentPrice.div(precision);
+        totalWeiCost = totalWeiCost.mul(_quantity);
 
         //turn price from wei to weiZap
-        uint256 totalWeiZap = totalWeiCost * weiInWeiZap;
+        uint256 totalWeiZap = totalWeiCost.mul(weiInWeiZap);
         require(getZapBalance(msg.sender) > totalWeiZap, "Not enough Zap in Wallet");
         // send the _quantity of aux token to buyer
         auxiliaryMarketToken.transfer(msg.sender, _quantity);
