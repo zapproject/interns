@@ -124,7 +124,7 @@ contract MainMarket is MainMarketInterface {
         return zapSpent;
     }
 
-    function removeHolder(address addr) public returns(bool) {
+    function removeHolder(address addr) private returns(bool) {
         uint index;
         for (uint i = 0; i < holderAddressesLength; i++){
             if(holderAddresses[i] == addr) index = i;

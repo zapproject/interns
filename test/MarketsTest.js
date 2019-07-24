@@ -167,18 +167,17 @@ contract('Auxiliary and Main Market', (accounts) => {
 		assert.equal(marketTokensOwned.toString(), 0, "should have 0 main market tokens");
 	});
 
-	it('Can buy Asset tokens', async () => {
+	it('Auxiliary Market buy Asset tokens', async () => {
 	
 		const originalZapBal = await zapToken.balanceOf.call(user4);
-		console.log('originalZapBal: ', originalZapBal.toString());
+		console.log('Original Zap Balance: ', originalZapBal.toString());
 		let auxWeiQuantity = 10;
 	
-		//in weiZap
 		let assetPrice = await am.buy.call(auxWeiQuantity, {from: user4});
-		await am.buy(auxWeiQuantity, {from: user4}); //call fucntion without .call
+		await am.buy(auxWeiQuantity, {from: user4});
 	
 		let auxWeiBalance = await am.getAMTBalance.call(user4);
-		assert.equal(auxWeiBalance, auxWeiQuantity, 'should have 10 auxWei token');
+		assert.equal(auxWeiBalance, auxWeiQuantity, 'Should have 10 auxWei token');
 	
 		console.log(
 		  'Buy Price of: ',
@@ -192,7 +191,7 @@ contract('Auxiliary and Main Market', (accounts) => {
 		assert.equal(
 		  newZapBalance.toString(),
 		  expected,
-		  'should send the right amount of zap'
+		  'Should send the right amount of zap'
 		);
 	  });
 });

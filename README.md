@@ -31,6 +31,7 @@ The Main Market and the Auxiliary Market(s)
 **`initalized`** bool - checks if the market is initialized  
 **`tokens`** uint256 - tracker of how many MainMarketTokens exist  
 **`zapBalance`** uint256 - tracker of how much Zap is in the pool (in weiZap)  
+**`bonded`** bool - checks if user is bonded
 
 - **Constructor**
 
@@ -96,8 +97,8 @@ exchanges MainMarketToken and unbonds dot from Main Market curve and transfers Z
 	Parameters:  
 	`dots` - uint256  
 
-- **remove**  
-`function remove(address addr) public returns(bool)`  
+- **removeHolder**  
+`function removeHolder(address addr) public returns(bool)`  
 removes address from Main Market holders  
 
 	Parameters:  
@@ -122,7 +123,7 @@ Withdraw Zap from gains/losses from Auxiliary Market and disperse 5% of the fee 
    - `hasApprovedMMT` - Requires user to approve the Main Market Contract an allowance to spend MainMarketTokens on their behalf
 
 
-## Functinality of Auxiliary Market
+## Functionality of Auxiliary Market
 **Initialized with a `AuxMarketHolder` struct:**  
 **`avgPrice`** uint256 - average price tracker of all AuxiliaryMarketTokens user purchased  
 **`subTokensOwned`** uint256 - tracker of how many Auxiliary asset tokens user has  
@@ -153,7 +154,7 @@ sells user's auxiliary market tokens for the asset and gets zap back
 	`_quantity` - uint256  
 
 - **getCurrentPrice**  
-    + **Suppose to query an oracle to obtain the asset's current price  
+    + **Supposed to query an oracle to obtain the asset's current price  
 
 - **getBalance**  
 `function getBalance(address _address) public view returns (uint256)`  
