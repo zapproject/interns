@@ -167,7 +167,7 @@ contract('Auxiliary and Main Market', (accounts) => {
 		assert.equal(marketTokensOwned.toString(), 0, "should have 0 main market tokens");
 	});
 
-	it('Auxiliary Market buy Asset tokens', async () => {
+	it('can buy Asset tokens', async () => {
 	
 		const originalZapBal = await zapToken.balanceOf.call(user4);
 		console.log('Original Zap Balance: ', originalZapBal.toString());
