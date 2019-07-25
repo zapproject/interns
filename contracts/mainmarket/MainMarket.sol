@@ -99,7 +99,6 @@ contract MainMarket is MainMarketInterface {
 
     //Deposits Zap into Main Market Token Contract and approves Bondage an allowance of
     //zap amount to be used to bond
-    //For testing
     function depositZap(uint256 amount) public hasZap(amount) hasApprovedZap(amount) returns (bool) {
         zapToken.transferFrom(msg.sender, address(this), amount);
         MainMarketHolder storage holder = getHolder(msg.sender);

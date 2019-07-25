@@ -24,7 +24,7 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     AuxiliaryMarketTokenInterface public auxiliaryMarketToken;
     // uint256 public auxTokenPrice; //in wei might not need
 
-    //asset prices in wei
+    //Asset prices in wei
     uint[] public assetPrices = [3213875942658800128, 6427751885317600256, 9641627827976400896,
     12855503770635200512, 16069379713294000128, 19283255655952801792, 22497131598611599360,
     25711007541270401024, 28924883483929198592, 32138759426588000256, 35352635369246801920,
@@ -46,59 +46,33 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
         mainMarket = MainMarketInterface(coordinator.getContract("MAINMARKET"));
         auxiliaryMarketToken = AuxiliaryMarketTokenInterface(coordinator.getContract("AUXILIARYMARKET_TOKEN"));
         zapToken = ZapToken(coordinator.getContract("ZAP_TOKEN"));
-        //precision = pow(10, 18);
     }
 
     //@_quantity is auxwei
     // Transfer zap from holder to market
     function buy(uint256 _quantity) public returns(uint256){
-        // get current price in wei
-        uint256 currentPrice = 51422015082540802048;
-        uint256 totalWeiCost = currentPrice.div(precision);
-        totalWeiCost = totalWeiCost.mul(_quantity);
-
-        //turn price from wei to weiZap
-        uint256 totalWeiZap = totalWeiCost.mul(weiInWeiZap);
+        uint256 totalWeiZap = weiToWeiZap(51422015082540802048, _quantity);
         require(getZapBalance(msg.sender) > totalWeiZap, "Not enough Zap in Wallet");
-        // send the _quantity of aux token to buyer
-        auxiliaryMarketToken.transfer(msg.sender, _quantity);
-        //get zap from buyer
-        zapToken.transferFrom(msg.sender, address(this), totalWeiZap);
-        zapToken.transfer(address(mainMarket), totalWeiZap);
-
-        AuxMarketHolder memory holder = holders[msg.sender];
-        uint256 newTotalTokens = holder.tokens.add(_quantity);
-        // holder struct with price bought in and amount of subtokens
-        uint256 avgPrice = (totalWeiCost + holder.avgPrice * holder.tokens).div(newTotalTokens);
-
-        holder.avgPrice = avgPrice;
-        holder.tokens = newTotalTokens;
-
+        exchange(totalWeiZap, _quantity);
+        calculateAveragePrice(51422015082540802048, _quantity);
         return totalWeiZap;
-        // Map holder msg.sender to key: value being holder struct
     }
 
     function sell(uint256 _quantity) public hasApprovedAMT(_quantity) hasEnoughAMT(_quantity) returns(uint256) {
-        uint256 currentPrice = 3213875942658800128;
-        uint256 totalWeiCost = currentPrice.div(precision).mul(_quantity); 
-        uint256 totalWeiZap = totalWeiCost.mul(weiInWeiZap); 
-
+        uint256 totalWeiZap = weiToWeiZap(3213875942658800128, _quantity);
         require(getZapBalance(address(mainMarket)) > totalWeiZap, "Not enough Zap in MainMarket");
-
         mainMarket.withdraw(totalWeiZap, msg.sender);
-
         auxiliaryMarketToken.transferFrom(msg.sender, address(this), _quantity);
-
         return totalWeiZap;
     }
 
-    // Grabs current price of asset
+    //Grabs current price of asset
     function getCurrentPrice() public returns (uint) {
         uint256 num = 16;
         return assetPrices[random() % num];
     }
 
-    // Grabs User's current balance of Zap Balance
+    //Grabs User's current balance of Zap Balance
     function getZapBalance(address _address) public view returns (uint256) {
         return zapToken.balanceOf(_address);
     }
@@ -109,6 +83,26 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
 
     function getAMTBalance(address _owner) public view returns(uint256) {
         return auxiliaryMarketToken.balanceOf(_owner);
+    }
+
+    //Private
+    function exchange(uint256 weiZapQuantity, uint256 auxWeiQuantity) private {
+        auxiliaryMarketToken.transfer(msg.sender, auxWeiQuantity);
+        zapToken.transferFrom(msg.sender, address(this), weiZapQuantity);
+        zapToken.transfer(address(mainMarket), weiZapQuantity);
+    }
+
+    function weiToWeiZap(uint256 currentPriceinWei, uint256 _quantity) private returns(uint256) {
+        return currentPriceinWei.div(precision).mul(_quantity).mul(weiInWeiZap);
+    }
+
+    function calculateAveragePrice(uint256 currentPriceinWei, uint256 _quantity) private {
+        uint256 totalWeiCost = currentPriceinWei.div(precision).mul(_quantity); 
+        AuxMarketHolder memory holder = holders[msg.sender];
+        uint256 newTotalTokens = holder.tokens.add(_quantity);
+        uint256 avgPrice = (totalWeiCost.add(holder.avgPrice).mul(holder.tokens)).div(newTotalTokens);
+        holder.avgPrice = avgPrice;
+        holder.tokens = newTotalTokens;
     }
 
     //Helpers 
@@ -128,7 +122,14 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     //Requires User to approve the Auxiliary Market Contract an allowance to spend amt on their behalf
     modifier hasApprovedAMT(uint256 amount) {
         uint256 allowance = auxiliaryMarketToken.allowance(msg.sender, address(this));
-        require (allowance >= amount, "Not enough AMT allowance to be spent by Auxiliary Contract");
+        require (allowance >= amount, "Not enough AMT allowance to be spent by Auxiliary Market Contract");
+        _;
+    }
+
+    //Requires User to have enough Zap in their account
+    modifier hasEnoughZap(uint256 amount) {
+        uint256 zapBalance = zapToken.balanceOf(msg.sender);
+        require (zapBalance >= amount, "Not enough Zap in wallet");
         _;
     }
 
