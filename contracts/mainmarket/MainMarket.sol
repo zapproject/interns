@@ -83,7 +83,7 @@ contract MainMarket is MainMarketInterface {
     function getEquityStake(address holder) public returns (uint256) {
         uint256 totalBonded = bondage.getDotsIssued(address(this), endPoint);
         uint256 holderTotal = mainMarketToken.balanceOf(holder);
-        uint256 equityStake = holderTotal*100 / totalBonded;
+        uint256 equityStake = holderTotal.mul(100).div(totalBonded);
         return equityStake;
     }
 
@@ -99,11 +99,10 @@ contract MainMarket is MainMarketInterface {
 
     //Deposits Zap into Main Market Token Contract and approves Bondage an allowance of
     //zap amount to be used to bond
-    //For testing
     function depositZap(uint256 amount) public hasZap(amount) hasApprovedZap(amount) returns (bool) {
         zapToken.transferFrom(msg.sender, address(this), amount);
         MainMarketHolder storage holder = getHolder(msg.sender);
-        holder.zapBalance += amount;
+        holder.zapBalance = holder.zapBalance.add(amount);
         address bondageAddr = coordinator.getContract("BONDAGE");
         return zapToken.approve(bondageAddr, amount);
     }
@@ -114,17 +113,17 @@ contract MainMarket is MainMarketInterface {
         MainMarketHolder storage holder = getHolder(msg.sender);
         uint zapSpent = bondage.bond(address(this), endPoint, dots);
         mainMarketToken.transfer(msg.sender, dots);
-        holder.zapBalance -= zapSpent;
-        holder.tokens += dots;
+        holder.zapBalance = holder.zapBalance.sub(zapSpent);
+        holder.tokens = holder.tokens.add(dots);
         if(!holder.bonded) {
             holderAddresses.push(msg.sender);
-            holderAddressesLength += 1;
+            holderAddressesLength++;
             holder.bonded = true;
         }
         return zapSpent;
     }
 
-    function removeHolder(address addr) public returns(bool) {
+    function removeHolder(address addr) private returns(bool) {
         uint index;
         for (uint i = 0; i < holderAddressesLength; i++){
             if(holderAddresses[i] == addr) index = i;
@@ -145,7 +144,7 @@ contract MainMarket is MainMarketInterface {
         MainMarketHolder storage holder = getHolder(msg.sender);
         uint netZap = bondage.unbond(address(this), endPoint, dots);
         mainMarketToken.transferFrom(msg.sender, address(this), dots);
-        holder.tokens -= dots;
+        holder.tokens = holder.tokens.sub(dots);
         zapToken.transfer(msg.sender, netZap);
         if(holder.tokens < 1) {
             removeHolder(msg.sender);
@@ -192,7 +191,7 @@ contract MainMarket is MainMarketInterface {
     //function destroyMainMarket() private {}
 
     //Modifiers
-    //Requires user to have enough zap to cover the cost of dots
+    //Requires user to have enough zap in Main Market to cover the cost of dots
     modifier hasEnoughZapForDots(uint256 dots) {
         MainMarketHolder storage holder = getHolder(msg.sender);
         uint256 zapBalance = holder.zapBalance;
