@@ -12,14 +12,14 @@ module.exports = async function(deployer) {
   await deployer.deploy(AuxiliaryMarketToken);
   const mmt = await MainMarketToken.deployed();
   const amt = await AuxiliaryMarketToken.deployed();
-  await coordinator.addImmutableContract('MAINMARKET_TOKEN', mmt.address);
-  await coordinator.addImmutableContract('AUXILIARYMARKET_TOKEN', amt.address);
+  await coordinator.updateContract('MAINMARKET_TOKEN', mmt.address);
+  await coordinator.updateContract('AUXILIARYMARKET_TOKEN', amt.address);
   await deployer.deploy(MainMarket, ZapCoordinator.address);
   const mm = await MainMarket.deployed();
-  await coordinator.addImmutableContract('MAINMARKET', mm.address);
+  await coordinator.updateContract('MAINMARKET', mm.address);
   await deployer.deploy(AuxiliaryMarket, ZapCoordinator.address);
   const am = await AuxiliaryMarket.deployed();
-  await coordinator.addImmutableContract('AUXMARKET', am.address);
+  await coordinator.updateContract('AUXMARKET', am.address);
 
   var accounts = await web3.eth.getAccounts();
   var secondAccount = accounts[1];
