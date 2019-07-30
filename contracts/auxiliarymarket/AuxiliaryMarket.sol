@@ -116,7 +116,6 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     function getAMTBalance(address _owner) public view returns(uint256) {
         return auxiliaryMarketToken.balanceOf(_owner);
     }
-
     //Modifiers
     //Requires User to approve the Main Market Contract an allowance to spend amt on their behalf
     modifier hasApprovedAMT(uint256 amount) {
