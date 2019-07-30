@@ -11,7 +11,7 @@ import "./AuxiliaryMarketTokenInterface.sol";
 contract AuxiliaryMarket is AuxiliaryMarketInterface {
     using SafeMath for uint256;
 
-    event Results(string response1, string response2, string response3, string response4);
+    event Results(uint256 response1, uint256 response2, string response3, string response4);
 
     struct AuxMarketHolder{
         uint256 avgPrice;
@@ -79,13 +79,13 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     }
 
     function callback(uint256 id, string calldata response1, string calldata response2) external {
-        emit Results(response1, response2, "NOTAVAILABLE", "NOTAVAILABLE");
         Order storage order = queries[id];
         address sender = order.sender;
         uint256 _quantity = order._quantity;
         Action action = order.action;
         uint256 zapInWei = stringToUint(response1);
-        uint256 currentAssetPrice = 2;
+        uint256 currentAssetPrice = stringToUint(response2);
+        emit Results(zapInWei, currentAssetPrice, "NOTAVAILABLE", "NOTAVAILABLE");
         uint256 weiInWeiZap = weiZap.div(zapInWei);
         uint256 totalWeiZap = weiToWeiZap(currentAssetPrice, weiInWeiZap, _quantity);
         if(action == Action.BUY) {
