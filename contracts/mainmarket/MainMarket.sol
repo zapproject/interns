@@ -162,6 +162,11 @@ contract MainMarket is MainMarketInterface {
         return zapToken.balanceOf(_owner);
     }
 
+    //returns deposited zap amoun of msg.sender
+    function getDepositedZap() public returns(uint256) {
+        return holders[msg.sender].zapBalance;
+    } 
+
     //Get current MMT Balance of Owner
     function getMMTBalance(address _owner) public returns(uint256) {
         return mainMarketToken.balanceOf(_owner);
