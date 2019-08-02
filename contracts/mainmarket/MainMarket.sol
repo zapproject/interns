@@ -22,10 +22,9 @@ contract MainMarket is MainMarketInterface {
         bool bonded;
     }
 
-    mapping (address => MainMarketHolder) public holders;
+    mapping (address => MainMarketHolder) holders;
     address[] public holderAddresses;
     uint public holderAddressesLength = 0;
-    uint256 public zapInWei = 28449300676025;
 
 
     RegistryInterface public registry;
