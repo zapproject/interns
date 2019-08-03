@@ -145,6 +145,7 @@ contract MainMarket is MainMarketInterface {
         mainMarketToken.transferFrom(msg.sender, address(this), dots);
         holder.tokens = holder.tokens.sub(dots);
         zapToken.transfer(msg.sender, netZap);
+        holder.zapBalance= holder.zapBalance.add(netZap);
         if(holder.tokens < 1) {
             removeHolder(msg.sender);
             holder.bonded = false;
@@ -188,6 +189,16 @@ contract MainMarket is MainMarketInterface {
         uint256 netAmount = amount - fee;
         zapToken.transfer(addr, netAmount);
         return fee;
+    }
+
+    //user can withdraw their zap from main market
+    function userWithDraw (uint256 amount) public {
+        MainMarketHolder storage holder = getHolder(msg.sender);
+        //cant withdraw more than what was deposited
+        require(holder.zapBalance > amount);
+        zapToken.transfer(msg.sender, amount);
+        holder.zapBalance = holder.zapBalance.sub(amount);
+
     }
 
     //Destroys the contract when there is no more Zap
