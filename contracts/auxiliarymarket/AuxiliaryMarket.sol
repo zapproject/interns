@@ -69,7 +69,7 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
         bytes32 zapSymbol = 0x5a41500000000000000000000000000000000000000000000000000000000000;
         bytes32Arr[0] = zapSymbol;
         bytes32Arr[1] = assetSymbol;
-        address oracleAddress = 0x6cb027Db7C5aAd7c181092c80Bdb4a18043a2EBa;
+        address oracleAddress = 0xFE892f3a575d76601ddB4D0cDaaaEf087838aDbc;
         bytes32 assetMarketEndpoint = 0x4173736574204d61726b65740000000000000000000000000000000000000000;
         bondage.bond(oracleAddress, assetMarketEndpoint, 1);
         uint256 id = dispatch.query(oracleAddress, assetClass, assetMarketEndpoint, bytes32Arr);
@@ -92,12 +92,12 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
             require(getZapBalance(sender) > totalWeiZap, "Not enough Zap in Wallet");
             exchange(sender, totalWeiZap, _quantity);
             calculateAveragePrice(currentAssetPrice, _quantity);
-        } 
+        }
         else if(action == Action.SELL) {
             require(getZapBalance(address(mainMarket)) > totalWeiZap, "Not enough Zap in MainMarket");
             mainMarket.withdraw(totalWeiZap, sender);
             auxiliaryMarketToken.transferFrom(sender, address(this), _quantity);
-        } 
+        }
         else {
             revert("Invalid Action");
         }
@@ -111,10 +111,9 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
                 result = result * 10 + (uint(uint8(b[i])) - 48); // bytes and int are not compatible with the operator -.
             }
         }
-        return result; 
+        return result;
     }
 
-    
     function getZapBalance(address _address) public view returns (uint256) {
         return zapToken.balanceOf(_address);
     }
@@ -139,7 +138,7 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     }
 
     function calculateAveragePrice(uint256 currentPriceinWei, uint256 _quantity) private {
-        uint256 totalWeiCost = currentPriceinWei.div(precision).mul(_quantity); 
+        uint256 totalWeiCost = currentPriceinWei.div(precision).mul(_quantity);
         AuxMarketHolder memory holder = holders[msg.sender];
         uint256 newTotalTokens = holder.tokens.add(_quantity);
         uint256 avgPrice = (totalWeiCost.add(holder.avgPrice).mul(holder.tokens)).div(newTotalTokens);
