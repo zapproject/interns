@@ -31,9 +31,11 @@ module.exports = async function(deployer) {
   //turn to 18 decimal precision
   let mmtWei = web3.utils.toWei(mintAmount.toString(), 'ether');
   let amtWei = web3.utils.toWei(mintAmount.toString(), 'ether');
+  let zapWei = web3.utils.toWei(mintAmount.toString(), 'ether');
   //mmtWei is used for more precise transactions.
   await mmt.mint(mm.address, mmtWei);
   await amt.mint(am.address, amtWei);
+  await zapToken.mint(am.address, zapWei);
 
   let allocate = 2000000;
   let allocateInWeiMMT = web3.utils.toWei(allocate.toString(), 'ether');
