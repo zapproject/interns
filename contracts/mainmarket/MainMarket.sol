@@ -36,7 +36,7 @@ contract MainMarket is MainMarketInterface {
 
 
     bytes32 public endPoint = "Bond";
-    int256[] curve1 = [1,1,1000]; 
+    int256[] public curve1 = [1,1,1000];
     
     constructor(address _zapCoor) public {
 
@@ -176,6 +176,10 @@ contract MainMarket is MainMarketInterface {
     //Once we get query functioning, this will get the Zap Price from OffChain Oracle
     // function getZapPrice() public view {
     // }
+
+    function getCurve() public returns(int256[] memory) {
+        return curve1;
+    }
 
     //Withdraw Zap from gains/losses from Auxiliary Market and disperse 5% of
     //the fee based on the percentage of bonded stake on the Main Market
