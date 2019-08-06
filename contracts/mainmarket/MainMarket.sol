@@ -14,6 +14,10 @@ import "./MainMarketInterface.sol";
 contract MainMarket is MainMarketInterface {
     using SafeMath for uint256;
 
+    event Bonded(uint256 dots);
+    event Unbonded(uint256 dots);
+
+
     //tokens represents dots bonded
     struct MainMarketHolder{
         bool initialized;
@@ -119,6 +123,8 @@ contract MainMarket is MainMarketInterface {
             holderAddressesLength++;
             holder.bonded = true;
         }
+
+        emit Bonded(dots);
         return zapSpent;
     }
 
@@ -150,6 +156,8 @@ contract MainMarket is MainMarketInterface {
             removeHolder(msg.sender);
             holder.bonded = false;
         }
+        emit Unbonded(dots);
+
     }
 
     //For local testing purposes
