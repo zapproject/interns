@@ -174,6 +174,8 @@ contract MainMarket is MainMarketInterface {
     //Withdraw Zap from gains/losses from Auxiliary Market and disperse 5% of
     //the fee based on the percentage of bonded stake on the Main Market
     function withdraw(uint256 amount, address addr) external returns(uint256) {
+        address auxiliaryMarketAddress = coordinator.getContract("AUXMARKET");
+        require(address(msg.sender)==address(auxiliaryMarketAddress),"Only Auxiliary Market can access this method");
         uint256 fee = (amount.mul(5)).div(100);
         for (uint i = 0; i < holderAddressesLength; i++) {
             uint256 equity = getEquityStake(holderAddresses[i]);

@@ -40,6 +40,8 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     uint weiZap = precision;
     bytes32 assetSymbol;
     string assetClass;
+    uint256 usdAssetPrice;
+    uint256 totalWeiZap;
 
 
     constructor(address _zapCoor) public {
@@ -79,15 +81,18 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     }
 
     function callback(uint256 id, string calldata response1, string calldata response2) external {
+        address dispatchAddress = coordinator.getContract("DISPATCH");
+        require(address(msg.sender)==address(dispatchAddress),"Only accept response from dispatch");
         Order storage order = queries[id];
         address sender = order.sender;
         uint256 _quantity = order._quantity;
         Action action = order.action;
         uint256 zapInWei = stringToUint(response1);
         uint256 currentAssetPrice = stringToUint(response2);
-        emit Results(zapInWei, currentAssetPrice, "NOTAVAILABLE", "NOTAVAILABLE");
+        usdAssetPrice = 1023467;
         uint256 weiInWeiZap = weiZap.div(zapInWei);
-        uint256 totalWeiZap = weiToWeiZap(currentAssetPrice, weiInWeiZap, _quantity);
+        emit Results(zapInWei, currentAssetPrice, "NOTAVAILABLE", "NOTAVAILABLE");
+        totalWeiZap = weiToWeiZap(currentAssetPrice, weiInWeiZap, _quantity);
         if(action == Action.BUY) {
             require(getZapBalance(sender) > totalWeiZap, "Not enough Zap in Wallet");
             exchange(sender, totalWeiZap, _quantity);
