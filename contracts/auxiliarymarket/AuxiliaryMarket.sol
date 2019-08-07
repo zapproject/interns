@@ -13,6 +13,10 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
 
     event Results(uint256 response1, uint256 response2, string response3, string response4);
 
+    event Bought(address sender, uint256 totalWeiZap);
+
+    event Sold(address sender, uint256 totalWeiZap);
+
     struct AuxMarketHolder{
         uint256 avgPrice;
         uint256 tokens;
@@ -40,6 +44,9 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     uint weiZap = precision;
     bytes32 assetSymbol;
     string assetClass;
+
+    uint256 currentAssetPrice;
+
     uint256 usdAssetPrice;
     uint256 totalWeiZap;
 
@@ -71,7 +78,7 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
         bytes32 zapSymbol = 0x5a41500000000000000000000000000000000000000000000000000000000000;
         bytes32Arr[0] = zapSymbol;
         bytes32Arr[1] = assetSymbol;
-        address oracleAddress = 0x6cb027Db7C5aAd7c181092c80Bdb4a18043a2EBa;
+        address oracleAddress = 0xFE892f3a575d76601ddB4D0cDaaaEf087838aDbc;
         bytes32 assetMarketEndpoint = 0x4173736574204d61726b65740000000000000000000000000000000000000000;
         bondage.bond(oracleAddress, assetMarketEndpoint, 1);
         uint256 id = dispatch.query(oracleAddress, assetClass, assetMarketEndpoint, bytes32Arr);
@@ -88,21 +95,25 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
         uint256 _quantity = order._quantity;
         Action action = order.action;
         uint256 zapInWei = stringToUint(response1);
-        uint256 currentAssetPrice = stringToUint(response2);
+        currentAssetPrice = stringToUint(response2);
         usdAssetPrice = 1023467;
-        uint256 weiInWeiZap = weiZap.div(zapInWei);
         emit Results(zapInWei, currentAssetPrice, "NOTAVAILABLE", "NOTAVAILABLE");
+        uint256 weiInWeiZap = weiZap.div(zapInWei);
         totalWeiZap = weiToWeiZap(currentAssetPrice, weiInWeiZap, _quantity);
         if(action == Action.BUY) {
             require(getZapBalance(sender) > totalWeiZap, "Not enough Zap in Wallet");
             exchange(sender, totalWeiZap, _quantity);
             calculateAveragePrice(currentAssetPrice, _quantity);
-        } 
+            uint256 amt = getAMTBalance(sender);
+            emit Bought(sender, totalWeiZap, amt);
+        }
         else if(action == Action.SELL) {
             require(getZapBalance(address(mainMarket)) > totalWeiZap, "Not enough Zap in MainMarket");
-            mainMarket.withdraw(totalWeiZap, sender);
+            //mainMarket.withdraw(totalWeiZap, sender);
             auxiliaryMarketToken.transferFrom(sender, address(this), _quantity);
-        } 
+            uint256 amt = getAMTBalance(sender);
+            emit Sold(sender, totalWeiZap, amt);
+        }
         else {
             revert("Invalid Action");
         }
