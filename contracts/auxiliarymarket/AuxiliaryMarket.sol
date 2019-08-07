@@ -16,10 +16,6 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     event Sold(address sender, uint256 totalWeiZap, uint256 amt);
     
 
-    event Bought(address sender, uint256 totalWeiZap);
-
-    event Sold(address sender, uint256 totalWeiZap);
-
     struct AuxMarketHolder{
         uint256 avgPrice;
         uint256 tokens;
