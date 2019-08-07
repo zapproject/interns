@@ -196,9 +196,10 @@ contract MainMarket is MainMarketInterface {
         require(address(msg.sender)==address(auxiliaryMarketAddress),"Only Auxiliary Market can access this method");
         uint256 fee = (amount.mul(5)).div(100);
         for (uint i = 0; i < holderAddressesLength; i++) {
+            MainMarketHolder storage holder = getHolder(holderAddresses[i]);
             uint256 equity = getEquityStake(holderAddresses[i]);
             uint256 equityAmount = equity.mul(fee).div(100);
-            zapToken.transfer(holderAddresses[i], equityAmount);
+            holder.zapBalance = holder.zapBalance.add(equityAmount);
         }
         uint256 netAmount = amount - fee;
         zapToken.transfer(addr, netAmount);
@@ -206,13 +207,21 @@ contract MainMarket is MainMarketInterface {
     }
 
     //user can withdraw their zap from main market
-    function userWithDraw (uint256 amount) public {
+    function withdrawFunds(uint256 amount) public {
         MainMarketHolder storage holder = getHolder(msg.sender);
         //cant withdraw more than what was deposited
         require(holder.zapBalance > amount);
         zapToken.transfer(msg.sender, amount);
         holder.zapBalance = holder.zapBalance.sub(amount);
 
+    }
+
+    function zapForDots(uint256 dots) public returns (uint256) {
+        MainMarketHolder storage holder = getHolder(msg.sender);
+        uint256 issued = bondage.getDotsIssued(address(this), endPoint);
+        require(issued + dots <= bondage.dotLimit(address(this), endPoint), "Error: Dot limit exceeded");
+        uint256 numZapForDots = currentCost._costOfNDots(address(this), endPoint, issued + 1, dots - 1);
+        return numZapForDots;
     }
 
     //Destroys the contract when there is no more Zap
@@ -224,9 +233,7 @@ contract MainMarket is MainMarketInterface {
     modifier hasEnoughZapForDots(uint256 dots) {
         MainMarketHolder storage holder = getHolder(msg.sender);
         uint256 zapBalance = holder.zapBalance;
-        uint256 issued = bondage.getDotsIssued(address(this), endPoint);
-        require(issued + dots <= bondage.dotLimit(address(this), endPoint), "Error: Dot limit exceeded");
-        uint256 numZapForDots = currentCost._costOfNDots(address(this), endPoint, issued + 1, dots - 1);
+        uint256 numZapForDots = zapForDots(dots);
         require (zapBalance >= numZapForDots, "Not enough Zap to buy dots");
         _;
     }

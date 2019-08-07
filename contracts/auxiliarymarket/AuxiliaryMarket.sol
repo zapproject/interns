@@ -11,7 +11,7 @@ import "./AuxiliaryMarketTokenInterface.sol";
 contract AuxiliaryMarket is AuxiliaryMarketInterface {
     using SafeMath for uint256;
 
-    event Results(uint256 response1, uint256 response2, string response3, string response4);
+    event Results(uint256 zapInWei, uint256 assetInWei, string zapInUsd, string assetInUsd);
     event Bought(address sender, uint256 totalWeiZap, uint256 amt);
     event Sold(address sender, uint256 totalWeiZap, uint256 amt);
     
@@ -43,10 +43,6 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     uint weiZap = precision;
     bytes32 assetSymbol;
     string assetClass;
-
-    uint256 currentAssetPrice;
-
-    uint256 usdAssetPrice;
     uint256 totalWeiZap;
 
 
@@ -94,9 +90,8 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
         uint256 _quantity = order._quantity;
         Action action = order.action;
         uint256 zapInWei = stringToUint(response1);
-        currentAssetPrice = stringToUint(response2);
-        usdAssetPrice = 1023467;
-        emit Results(zapInWei, currentAssetPrice, "NOTAVAILABLE", "NOTAVAILABLE");
+        uint256 currentAssetPrice = stringToUint(response2);
+        emit Results(zapInWei, currentAssetPrice, "0.007794", "11769");
         uint256 weiInWeiZap = weiZap.div(zapInWei);
         totalWeiZap = weiToWeiZap(currentAssetPrice, weiInWeiZap, _quantity);
         if(action == Action.BUY) {
