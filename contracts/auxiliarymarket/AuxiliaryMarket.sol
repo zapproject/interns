@@ -11,7 +11,10 @@ import "./AuxiliaryMarketTokenInterface.sol";
 contract AuxiliaryMarket is AuxiliaryMarketInterface {
     using SafeMath for uint256;
 
-    event Results(uint256 response1, uint256 response2, string response3, string response4);
+    event Results(uint256 zapInWei, uint256 assetInWei, string zapInUsd, string assetInUsd);
+    event Bought(address sender, uint256 totalWeiZap, uint256 amt);
+    event Sold(address sender, uint256 totalWeiZap, uint256 amt);
+    
 
     struct AuxMarketHolder{
         uint256 avgPrice;
@@ -40,6 +43,7 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     uint weiZap = precision;
     bytes32 assetSymbol;
     string assetClass;
+    uint256 totalWeiZap;
 
 
     constructor(address _zapCoor) public {
@@ -69,7 +73,7 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
         bytes32 zapSymbol = 0x5a41500000000000000000000000000000000000000000000000000000000000;
         bytes32Arr[0] = zapSymbol;
         bytes32Arr[1] = assetSymbol;
-        address oracleAddress = 0x6cb027Db7C5aAd7c181092c80Bdb4a18043a2EBa;
+        address oracleAddress = 0xFE892f3a575d76601ddB4D0cDaaaEf087838aDbc;
         bytes32 assetMarketEndpoint = 0x4173736574204d61726b65740000000000000000000000000000000000000000;
         bondage.bond(oracleAddress, assetMarketEndpoint, 1);
         uint256 id = dispatch.query(oracleAddress, assetClass, assetMarketEndpoint, bytes32Arr);
@@ -79,31 +83,37 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     }
 
     function callback(uint256 id, string calldata response1, string calldata response2) external {
+        address dispatchAddress = coordinator.getContract("DISPATCH");
+        require(address(msg.sender)==address(dispatchAddress),"Only accept response from dispatch");
         Order storage order = queries[id];
         address sender = order.sender;
         uint256 _quantity = order._quantity;
         Action action = order.action;
         uint256 zapInWei = stringToUint(response1);
         uint256 currentAssetPrice = stringToUint(response2);
-        emit Results(zapInWei, currentAssetPrice, "NOTAVAILABLE", "NOTAVAILABLE");
+        emit Results(zapInWei, currentAssetPrice, "0.007794", "11769");
         uint256 weiInWeiZap = weiZap.div(zapInWei);
-        uint256 totalWeiZap = weiToWeiZap(currentAssetPrice, weiInWeiZap, _quantity);
+        totalWeiZap = weiToWeiZap(currentAssetPrice, weiInWeiZap, _quantity);
         if(action == Action.BUY) {
             require(getZapBalance(sender) > totalWeiZap, "Not enough Zap in Wallet");
             exchange(sender, totalWeiZap, _quantity);
             calculateAveragePrice(currentAssetPrice, _quantity);
-        } 
+            uint256 amt = getAMTBalance(sender);
+            emit Bought(sender, totalWeiZap, amt);
+        }
         else if(action == Action.SELL) {
             require(getZapBalance(address(mainMarket)) > totalWeiZap, "Not enough Zap in MainMarket");
-            mainMarket.withdraw(totalWeiZap, sender);
+            //mainMarket.withdraw(totalWeiZap, sender);
             auxiliaryMarketToken.transferFrom(sender, address(this), _quantity);
-        } 
+            uint256 amt = getAMTBalance(sender);
+            emit Sold(sender, totalWeiZap, amt);
+        }
         else {
             revert("Invalid Action");
         }
     }
 
-    function stringToUint(string memory s) private returns (uint) {
+    function stringToUint(string memory s) private pure returns (uint) {
         bytes memory b = bytes(s);
         uint result = 0;
         for (uint i = 0; i < b.length; i++) { // c = b[i] was not needed
@@ -111,10 +121,10 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
                 result = result * 10 + (uint(uint8(b[i])) - 48); // bytes and int are not compatible with the operator -.
             }
         }
-        return result; 
+        return result;
     }
 
-    
+
     function getZapBalance(address _address) public view returns (uint256) {
         return zapToken.balanceOf(_address);
     }
@@ -134,12 +144,12 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
         zapToken.transfer(address(mainMarket), weiZapQuantity);
     }
 
-    function weiToWeiZap(uint256 currentPriceinWei, uint256 weiInWeiZap, uint256 _quantity) private returns(uint256) {
+    function weiToWeiZap(uint256 currentPriceinWei, uint256 weiInWeiZap, uint256 _quantity) private view returns(uint256) {
         return currentPriceinWei.div(precision).mul(_quantity).mul(weiInWeiZap);
     }
 
-    function calculateAveragePrice(uint256 currentPriceinWei, uint256 _quantity) private {
-        uint256 totalWeiCost = currentPriceinWei.div(precision).mul(_quantity); 
+    function calculateAveragePrice(uint256 currentPriceinWei, uint256 _quantity) private view {
+        uint256 totalWeiCost = currentPriceinWei.div(precision).mul(_quantity);
         AuxMarketHolder memory holder = holders[msg.sender];
         uint256 newTotalTokens = holder.tokens.add(_quantity);
         uint256 avgPrice = (totalWeiCost.add(holder.avgPrice).mul(holder.tokens)).div(newTotalTokens);
