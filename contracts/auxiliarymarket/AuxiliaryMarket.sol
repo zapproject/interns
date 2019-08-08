@@ -11,7 +11,10 @@ import "./AuxiliaryMarketTokenInterface.sol";
 contract AuxiliaryMarket is AuxiliaryMarketInterface {
     using SafeMath for uint256;
 
-    event Results(uint256 response1, uint256 response2, string response3, string response4);
+    event Results(uint256 zapInWei, uint256 assetInWei, string zapInUsd, string assetInUsd);
+    event Bought(address sender, uint256 totalWeiZap, uint256 amt);
+    event Sold(address sender, uint256 totalWeiZap, uint256 amt);
+    
 
     struct AuxMarketHolder{
         uint256 avgPrice;
@@ -40,17 +43,24 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     uint weiZap = precision;
     bytes32 assetSymbol;
     string assetClass;
+    uint256 totalWeiZap;
+
+    address public oracleAddress;
+    bytes32 assetMarketEndpoint;
+    bytes32 zapSymbol = 0x5a41500000000000000000000000000000000000000000000000000000000000;
 
 
-    constructor(address _zapCoor) public {
+    constructor(address _zapCoor, address _oracleAddress, bytes32 _endpoint, bytes32 _assetSymbol, string memory _assetClass) public {
         coordinator = ZapCoordinatorInterface(_zapCoor);
         dispatch = DispatchInterface(coordinator.getContract("DISPATCH"));
         mainMarket = MainMarketInterface(coordinator.getContract("MAINMARKET"));
         auxiliaryMarketToken = AuxiliaryMarketTokenInterface(coordinator.getContract("AUXILIARYMARKET_TOKEN"));
         zapToken = ZapToken(coordinator.getContract("ZAP_TOKEN"));
         bondage = BondageInterface(coordinator.getContract("BONDAGE"));
-        assetSymbol = 0x4254430000000000000000000000000000000000000000000000000000000000; //BTC
-        assetClass = "cryptocurrency";
+        assetSymbol = _assetSymbol;
+        assetClass = _assetClass;
+        oracleAddress = _oracleAddress;
+        assetMarketEndpoint = _endpoint;
     }
 
     function buy(uint256 _quantity) public{
@@ -66,11 +76,8 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
         uint256 auxiliaryContractZapBalance = zapToken.balanceOf(address(this));
         zapToken.approve(bondageAddress, auxiliaryContractZapBalance);
         bytes32[] memory bytes32Arr = new bytes32[](2);
-        bytes32 zapSymbol = 0x5a41500000000000000000000000000000000000000000000000000000000000;
         bytes32Arr[0] = zapSymbol;
         bytes32Arr[1] = assetSymbol;
-        address oracleAddress = 0x6cb027Db7C5aAd7c181092c80Bdb4a18043a2EBa;
-        bytes32 assetMarketEndpoint = 0x4173736574204d61726b65740000000000000000000000000000000000000000;
         bondage.bond(oracleAddress, assetMarketEndpoint, 1);
         uint256 id = dispatch.query(oracleAddress, assetClass, assetMarketEndpoint, bytes32Arr);
         Order memory order = Order(msg.sender, _quantity, action);
@@ -78,32 +85,56 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
         return id;
     }
 
-    function callback(uint256 id, string calldata response1, string calldata response2) external {
+    function callback(
+        uint256 id, 
+        string calldata response1, 
+        string calldata response2, 
+        string calldata response3, 
+        string calldata response4
+    ) 
+    external onlyDispatch 
+    {
         Order storage order = queries[id];
         address sender = order.sender;
         uint256 _quantity = order._quantity;
         Action action = order.action;
         uint256 zapInWei = stringToUint(response1);
         uint256 currentAssetPrice = stringToUint(response2);
-        emit Results(zapInWei, currentAssetPrice, "NOTAVAILABLE", "NOTAVAILABLE");
+        emit Results(zapInWei, currentAssetPrice, response3, response4);
         uint256 weiInWeiZap = weiZap.div(zapInWei);
-        uint256 totalWeiZap = weiToWeiZap(currentAssetPrice, weiInWeiZap, _quantity);
+        totalWeiZap = weiToWeiZap(currentAssetPrice, weiInWeiZap, _quantity);
+        exchange(totalWeiZap, _quantity, sender, action);
+    }
+
+    function exchange(uint256 weiZap, uint256 weiAux, address sender, Action action) private {
         if(action == Action.BUY) {
-            require(getZapBalance(sender) > totalWeiZap, "Not enough Zap in Wallet");
-            exchange(sender, totalWeiZap, _quantity);
-            calculateAveragePrice(currentAssetPrice, _quantity);
-        } 
+            _buy(totalWeiZap, weiAux, sender);
+        }
         else if(action == Action.SELL) {
-            require(getZapBalance(address(mainMarket)) > totalWeiZap, "Not enough Zap in MainMarket");
-            mainMarket.withdraw(totalWeiZap, sender);
-            auxiliaryMarketToken.transferFrom(sender, address(this), _quantity);
-        } 
+            _sell(totalWeiZap, weiAux, sender);
+        }
         else {
             revert("Invalid Action");
         }
     }
 
-    function stringToUint(string memory s) private returns (uint) {
+    function _sell(uint256 weiZap, uint256 weiAux, address sender) private {
+        mainMarket.withdraw(weiZap, sender);
+        auxiliaryMarketToken.transferFrom(sender, address(this), weiAux);
+        uint256 amt = getAMTBalance(sender);
+        emit Sold(sender, weiZap, amt);
+    }
+
+    function _buy(uint256 weiZap, uint256 weiAux, address sender) private {
+        require(getZapBalance(address(mainMarket)) > totalWeiZap, "Not enough Zap in MainMarket");
+        auxiliaryMarketToken.transfer(sender, weiAux);
+        zapToken.transferFrom(sender, address(this), weiZap);
+        zapToken.transfer(address(mainMarket), weiZap);
+        uint256 amt = getAMTBalance(sender);
+        emit Bought(sender, weiZap, amt);
+    }
+
+    function stringToUint(string memory s) private pure returns (uint) {
         bytes memory b = bytes(s);
         uint result = 0;
         for (uint i = 0; i < b.length; i++) { // c = b[i] was not needed
@@ -111,10 +142,10 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
                 result = result * 10 + (uint(uint8(b[i])) - 48); // bytes and int are not compatible with the operator -.
             }
         }
-        return result; 
+        return result;
     }
 
-    
+
     function getZapBalance(address _address) public view returns (uint256) {
         return zapToken.balanceOf(_address);
     }
@@ -134,12 +165,12 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
         zapToken.transfer(address(mainMarket), weiZapQuantity);
     }
 
-    function weiToWeiZap(uint256 currentPriceinWei, uint256 weiInWeiZap, uint256 _quantity) private returns(uint256) {
+    function weiToWeiZap(uint256 currentPriceinWei, uint256 weiInWeiZap, uint256 _quantity) private view returns(uint256) {
         return currentPriceinWei.div(precision).mul(_quantity).mul(weiInWeiZap);
     }
 
-    function calculateAveragePrice(uint256 currentPriceinWei, uint256 _quantity) private {
-        uint256 totalWeiCost = currentPriceinWei.div(precision).mul(_quantity); 
+    function calculateAveragePrice(uint256 currentPriceinWei, uint256 _quantity) private view {
+        uint256 totalWeiCost = currentPriceinWei.div(precision).mul(_quantity);
         AuxMarketHolder memory holder = holders[msg.sender];
         uint256 newTotalTokens = holder.tokens.add(_quantity);
         uint256 avgPrice = (totalWeiCost.add(holder.avgPrice).mul(holder.tokens)).div(newTotalTokens);
@@ -152,6 +183,12 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     modifier hasApprovedAMT(uint256 amount) {
         uint256 allowance = auxiliaryMarketToken.allowance(msg.sender, address(this));
         require (allowance >= amount, "Not enough AMT allowance to be spent by Auxiliary Market Contract");
+        _;
+    }
+
+    modifier onlyDispatch() {
+        address dispatchAddress = coordinator.getContract("DISPATCH");
+        require(address(msg.sender)==address(dispatchAddress),"Only accept response from dispatch");
         _;
     }
 
