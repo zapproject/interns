@@ -40,7 +40,7 @@ contract MainMarket is MainMarketInterface {
 
 
     bytes32 public endPoint = "Bond";
-    int256[] public curve1 = [1,1,1000];
+    int256[] public curve1 = [1,1,100,1,2,200,1,3,400,1,4,1000];
     
     constructor(address _zapCoor) public {
 
