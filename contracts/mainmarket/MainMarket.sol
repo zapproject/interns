@@ -10,6 +10,7 @@ import "../platform/bondage/Bondage.sol";
 import "./MainMarketToken.sol";
 import "../platform/bondage/currentCost/CurrentCost.sol";
 import "./MainMarketInterface.sol";
+import "../auxiliarymarket/AuxiliaryMarket.sol";
 
 contract MainMarket is MainMarketInterface {
     using SafeMath for uint256;
@@ -210,7 +211,7 @@ contract MainMarket is MainMarketInterface {
     function withdrawFunds(uint256 amount) public {
         MainMarketHolder storage holder = getHolder(msg.sender);
         //cant withdraw more than what was deposited
-        require(holder.zapBalance > amount);
+        require(holder.zapBalance >= amount);
         zapToken.transfer(msg.sender, amount);
         holder.zapBalance = holder.zapBalance.sub(amount);
 
