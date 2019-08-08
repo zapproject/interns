@@ -9,4 +9,6 @@ contract MainMarketInterface {
     function getDepositedZap() public returns(uint256);
     function getMMTBalance(address) public returns(uint256);
     function withdraw(uint256, address) external returns(uint256);
+    function zapForDots(uint256 dots) public returns (uint256);
+    function withdrawFunds(uint256 amount) public;
 }
