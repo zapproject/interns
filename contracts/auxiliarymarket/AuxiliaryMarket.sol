@@ -14,7 +14,6 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     event Results(uint256 response1, uint256 response2, string response3, string response4);
     event Bought(address sender, uint256 totalWeiZap, uint256 amt);
     event Sold(address sender, uint256 totalWeiZap, uint256 amt);
-    
 
     struct AuxMarketHolder{
         uint256 avgPrice;
@@ -44,7 +43,6 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     bytes32 assetSymbol;
     string assetClass;
     uint256 currentAssetPrice;
-    uint256 usdAssetPrice;
     uint256 totalWeiZap;
 
 
@@ -91,8 +89,7 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
         Action action = order.action;
         uint256 zapInWei = stringToUint(response1);
         currentAssetPrice = stringToUint(response2);
-        usdAssetPrice = 1023467;
-        emit Results(zapInWei, currentAssetPrice, "NOTAVAILABLE", "NOTAVAILABLE");
+        emit Results(zapInWei, currentAssetPrice, "0.007794", "11769");
         uint256 weiInWeiZap = weiZap.div(zapInWei);
         totalWeiZap = weiToWeiZap(currentAssetPrice, weiInWeiZap, _quantity);
         if(action == Action.BUY) {
