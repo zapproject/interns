@@ -5,7 +5,7 @@ const HDWalletProvider = require('truffle-hdwallet-provider-privkey');
 const HDWalletProviderMem = require('truffle-hdwallet-provider');
 
 const mnemonic =
-  'solid giraffe crowd become skin deliver screen receive balcony ask manual current';
+  'toward casual aware brand sea sport vital unknown escape elder soldier siren';
 
 module.exports = {
   networks: {

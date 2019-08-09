@@ -85,13 +85,13 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     }
 
     function callback(
-        uint256 id, 
-        string calldata response1, 
-        string calldata response2, 
-        string calldata response3, 
+        uint256 id,
+        string calldata response1,
+        string calldata response2,
+        string calldata response3,
         string calldata response4
-    ) 
-    external onlyDispatch 
+    )
+    external onlyDispatch
     {
         Order storage order = queries[id];
         address sender = order.sender;
