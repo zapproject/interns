@@ -17,6 +17,7 @@ contract MainMarket is MainMarketInterface {
 
     event Bonded(uint256 dots);
     event Unbonded(uint256 dots);
+    event TransferredFee(address recepient, uint256 amount);
 
 
     //tokens represents dots bonded
@@ -27,7 +28,7 @@ contract MainMarket is MainMarketInterface {
         bool bonded;
     }
 
-    mapping (address => MainMarketHolder) holders;
+    mapping (address => MainMarketHolder) public holders;
     address[] public holderAddresses;
     uint public holderAddressesLength = 0;
 
@@ -69,7 +70,7 @@ contract MainMarket is MainMarketInterface {
     //Gets existing Holder
     //If one does not exists, creates one
     function getHolder(address addr) private returns(MainMarketHolder storage) {
-        MainMarketHolder storage holder = holders[msg.sender];
+        MainMarketHolder storage holder = holders[addr];
         if(!holder.initialized) {
             holder.initialized = true;
             holder.tokens = 0;
@@ -152,7 +153,7 @@ contract MainMarket is MainMarketInterface {
         mainMarketToken.transferFrom(msg.sender, address(this), dots);
         holder.tokens = holder.tokens.sub(dots);
         zapToken.transfer(msg.sender, netZap);
-        holder.zapBalance= holder.zapBalance.add(netZap);
+        holder.zapBalance = holder.zapBalance.add(netZap);
         if(holder.tokens < 1) {
             removeHolder(msg.sender);
             holder.bonded = false;
@@ -201,6 +202,7 @@ contract MainMarket is MainMarketInterface {
             uint256 equity = getEquityStake(holderAddresses[i]);
             uint256 equityAmount = equity.mul(fee).div(100);
             holder.zapBalance = holder.zapBalance.add(equityAmount);
+            emit TransferredFee(holderAddresses[i], equityAmount);
         }
         uint256 netAmount = amount - fee;
         zapToken.transfer(addr, netAmount);

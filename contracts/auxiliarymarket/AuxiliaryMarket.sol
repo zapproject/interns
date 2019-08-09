@@ -126,7 +126,7 @@ contract AuxiliaryMarket is AuxiliaryMarketInterface {
     }
 
     function _buy(uint256 weiZap, uint256 weiAux, address sender) private {
-        require(getZapBalance(address(mainMarket)) > totalWeiZap, "Not enough Zap in MainMarket");
+        //require(getZapBalance(address(mainMarket)) > totalWeiZap, "Not enough Zap in MainMarket");
         auxiliaryMarketToken.transfer(sender, weiAux);
         zapToken.transferFrom(sender, address(this), weiZap);
         zapToken.transfer(address(mainMarket), weiZap);
