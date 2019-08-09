@@ -4,8 +4,8 @@ const ZapCoordinator = artifacts.require('./ZapCoordinator.sol');
 const MainMarketToken = artifacts.require('./MainMarketToken.sol');
 const AuxiliaryMarketToken = artifacts.require('./AuxiliaryMarketToken.sol');
 const ZapToken = artifacts.require('./ZapToken.sol');
-var oracleAddress = "0xFE892f3a575d76601ddB4D0cDaaaEf087838aDbc";
-//var oracleAddress = "0x6cb027Db7C5aAd7c181092c80Bdb4a18043a2EBa";
+//var oracleAddress = "0xFE892f3a575d76601ddB4D0cDaaaEf087838aDbc";
+var oracleAddress = "0x6cb027Db7C5aAd7c181092c80Bdb4a18043a2EBa";
 var assetSymbol = "0x4254430000000000000000000000000000000000000000000000000000000000";
 var assetClass = "cryptocurrency";
 var assetMarketEndpoint = "0x4173736574204d61726b65740000000000000000000000000000000000000000";
@@ -41,15 +41,16 @@ module.exports = async function(deployer) {
   await mmt.mint(mm.address, mmtWei);
   await amt.mint(am.address, amtWei);
   await zapToken.mint(am.address, zapWei);
+  await zapToken.mint(mm.address, zapWei);
 
-  let allocate = 2000000;
+  let allocate = 9000000;
   let allocateInWeiMMT = web3.utils.toWei(allocate.toString(), 'ether');
 
   //Allocate Zap to user for testing purposes locally
   await mm.allocateZap(allocateInWeiMMT);
 
   //2000000 zap
-  let approved = 2000000;
+  let approved = 9000000;
   let approveWeiZap = web3.utils.toWei(approved.toString(), 'ether');
 
   //Approve MainMarket and Aux Market an allowance of Zap to use on behalf of msg.sender(User)
